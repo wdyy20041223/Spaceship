@@ -1,0 +1,15 @@
+﻿  main.cpp
+D:\0graph\project\ConsoleApplication1\global.h(2,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
+  (编译源文件“main.cpp”)
+  
+D:\0graph\project\ConsoleApplication1\planet.h(8,16): warning C4091: “typedef ”: 没有声明变量时忽略“ball”的左侧
+  (编译源文件“main.cpp”)
+  
+D:\0graph\project\ConsoleApplication1\ship.h(7,16): warning C4091: “typedef ”: 没有声明变量时忽略“ship”的左侧
+  (编译源文件“main.cpp”)
+  
+D:\0graph\project\ConsoleApplication1\star.h(3,16): warning C4091: “typedef ”: 没有声明变量时忽略“star”的左侧
+  (编译源文件“main.cpp”)
+  
+D:\0graph\project\ConsoleApplication1\main.cpp(58,28): warning C4305: “参数”: 从“double”到“float”截断
+  ConsoleApplication1.vcxproj -> D:\0graph\project\ConsoleApplication1\run\ConsoleApplication1.exe
