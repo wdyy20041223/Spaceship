@@ -8,7 +8,7 @@ class CMatrix;
 typedef struct ball {
     char name[10];
     CVector centerPlace;//ÐÐÐÇÖÐÐÄ
-    CVector pointPlace[16][31];
+    CVector pointPlace[61][121];
     CVector color;
     CVector speed;
     CVector deltaPlace;

@@ -202,17 +202,18 @@ void drawRing(ball saturn) {
 }
 
 void initBall(ball& ball0) {
-    for (int i = -90; i <= 90; i += 12)
+    int temp = 4;
+    for (int i = -90; i <= 90; i += temp)
     {
-        for (int j = 0; j <= 360; j += 12)
+        for (int j = 0; j <= 360; j += temp)
         {
             float r = ball0.r * cos(A2R(i));
-            ball0.pointPlace[(90 + i) / 12][j / 12].x = r * sin(A2R(j));
-            ball0.pointPlace[(90 + i) / 12][j / 12].y = r * cos(A2R(j));
-            ball0.pointPlace[(90 + i) / 12][j / 12].z = ball0.r * sin(A2R(i));
+            ball0.pointPlace[(90 + i) / temp][j / temp].x = r * sin(A2R(j));
+            ball0.pointPlace[(90 + i) / temp][j / temp].y = r * cos(A2R(j));
+            ball0.pointPlace[(90 + i) / temp][j / temp].z = ball0.r * sin(A2R(i));
         }
     }
-    ball0.pointPlace[15][30] = ball0.pointPlace[0][0]; //使用CVerter类的等于
+    ball0.pointPlace[60][120] = ball0.pointPlace[0][0]; //使用CVerter类的等于
 
     for (int j = 0; j < 361; j++) {//初始化轨迹
         ball0.orbitPoints[j] = ball0.centerPlace;
@@ -284,9 +285,9 @@ void drawBall(ball ball0) {//绘制星球
 
     glColor3fv(ball0.color); // 颜色
     glLineWidth(1.0f);
-    for (int i = 0; i < 15; i++) {// 使用四边形带绘制球面
+    for (int i = 0; i < 60; i++) {// 使用四边形带绘制球面
         glBegin(GL_QUAD_STRIP);
-        for (int j = 0; j < 31; j++) {
+        for (int j = 0; j < 121; j++) {
             glVertex3fv(ball0.pointPlace[i][j]);
             glVertex3fv(ball0.pointPlace[i + 1][j]);
         }

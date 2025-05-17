@@ -15,7 +15,7 @@ void initAstronaut() {
     astronaut.angleStep = 1.8f;   // 默认转向角度增量
     astronaut.speedLen = 0.001f;    // 初始速度
     astronaut.leftRightAngle = 0.0f; // 初始朝向角度
-    astronaut.position = CVector(0, 0, 0); // 初始位置（Y=1模拟地面高度）
+    astronaut.position = CVector(0, -0.01, 0); // 初始位置（Y=1模拟地面高度）
     astronaut.direction = CVector(0, 0, 1);
     astronaut.cameraDistLen = 0.3;
     ControlingGlobal = true;
