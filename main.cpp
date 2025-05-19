@@ -132,6 +132,13 @@ int main(int argc, char* argv[]) {
     glutInitWindowSize(1600, 1200);// 设置窗口大小
     glutInitWindowPosition(100, 100);// 设置窗口位置
     glutCreateWindow("homework 1");// 创建窗口
+
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "Failed to initialize GLEW\n");
+        exit(EXIT_FAILURE);
+    }
+
     glutReshapeFunc(myReshape);//窗口大小改变回调
 
     initstar();

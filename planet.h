@@ -2,6 +2,9 @@
 #ifndef PLANET_H   
 #define PLANET_H  
 
+#include <GL/glew.h>    // 必须第一
+#include <GL/glut.h>
+
 #include "CVector.h" 
 class CMatrix;
 
@@ -26,7 +29,12 @@ typedef struct ball {
     int pointNum;//轨迹点数量
     int startNum;//轨迹点开始位置
     bool selected;
+
+    GLuint textureID;       // 纹理标识符
+    CVector2 texCoords[46][121]; // 纹理坐标数组 [纬度][经度]
 };
+
+
 
 void initPlanet();
 void drawRing(ball saturn);

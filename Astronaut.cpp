@@ -115,7 +115,7 @@ void drawAstronaut() {
     glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
     glutSolidCone(0.15, 1.0, 3, 3);
     glPopMatrix();
-
+    
     glPopMatrix();
 
 }

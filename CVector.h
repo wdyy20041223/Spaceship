@@ -10,6 +10,18 @@
 #define M_PI 3.14159265358979323846f
 #endif
 
+
+class CVector2 {
+public:
+    float u, v;
+
+    CVector2() : u(0.0f), v(0.0f) {}
+    CVector2(float u, float v) : u(u), v(v) {}
+    
+    operator float* () { return &u; }
+    operator const float* () const { return &u; }
+};
+
 class CVector {
 public:
     // 成员变量

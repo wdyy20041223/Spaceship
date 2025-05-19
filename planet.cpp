@@ -5,6 +5,9 @@
 #include "global.h"
 #include "CMatrix.h" 
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #define PLANETNUM 8
 #define A2R(x) (x/180.0*PI) //角度转弧度
 
@@ -13,6 +16,31 @@ ball planet[PLANETNUM];//struct ball类型
 float radiusCorrection = 1.2, distanceCorrection = 1.1, rotationCorrection = 1.1;//一些参数的修正系数
 ball* selectedPlanet = nullptr; // 当前选中的行星
 
+GLuint LoadTexture(const char* path) {
+
+    int width, height, channels;
+    unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
+    if (!data) {
+        printf("加载纹理失败: %s\n", path);
+        return 0;
+    }
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+        (channels == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // 设置纹理参数
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+    return textureID;
+}
 
 void drawPlanet() {
     for (int i = 0; i < PLANETNUM; i++) {
@@ -79,6 +107,15 @@ void mouseClick(int button, int state, int x, int y) {
 
 
 void initPlanet() {
+    planet[0].textureID = LoadTexture("textures/sun.jpg");        // 太阳
+    planet[1].textureID = LoadTexture("textures/mercury.jpg");    // 水星
+    planet[2].textureID = LoadTexture("textures/venus.jpg");      // 金星
+    planet[3].textureID = LoadTexture("textures/earth.jpg");      // 地球
+    planet[4].textureID = LoadTexture("textures/mars.jpg");       // 火星
+    planet[5].textureID = LoadTexture("textures/jupiter.jpg");    // 木星
+    planet[6].textureID = LoadTexture("textures/saturn.jpg");     // 土星
+    planet[7].textureID = LoadTexture("textures/moon.jpg");       // 月球
+
     for (int i = 0; i < PLANETNUM; i++) {
         planet[i].index = i;
     }
@@ -211,6 +248,10 @@ void initBall(ball& ball0) {
             ball0.pointPlace[(90 + i) / temp][j / temp].x = r * sin(A2R(j));
             ball0.pointPlace[(90 + i) / temp][j / temp].y = r * cos(A2R(j));
             ball0.pointPlace[(90 + i) / temp][j / temp].z = ball0.r * sin(A2R(i));
+
+            float u = (j) / 360.0f;
+            float v = (i + 90.0f) / 180.0f;
+            ball0.texCoords[(90 + i) / temp][j / temp] = CVector2(u, v);
         }
     }
     ball0.pointPlace[60][120] = ball0.pointPlace[0][0]; //使用CVerter类的等于
@@ -274,24 +315,39 @@ void drawTrack(ball ball0) {
     glPopMatrix();
 }
 
-void drawBall(ball ball0) {//绘制星球
-    glPushMatrix();
-    //平移坐标轴
+void drawBall(ball ball0) {
 
-    transMat1.SetTrans(CVector(ball0.orbitPoints[ball0.index].x, ball0.orbitPoints[ball0.index].y, ball0.orbitPoints[ball0.index].z));
-    rotateMat1.SetRotate(33.5, CVector(0, 0, 1));// 黄赤交角倾斜
-    rotateMat2.SetRotate(ball0.rotationAngle, CVector(0, 1, 0));// 自转角度
+    glPushMatrix();
+    transMat1.SetTrans(CVector(ball0.orbitPoints[ball0.index].x,
+        ball0.orbitPoints[ball0.index].y,
+        ball0.orbitPoints[ball0.index].z));
+    rotateMat1.SetRotate(33.5, CVector(0, 0, 1));
+    rotateMat2.SetRotate(ball0.rotationAngle, CVector(0, 1, 0));
     glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
 
-    glColor3fv(ball0.color); // 颜色
-    glLineWidth(1.0f);
-    for (int i = 0; i < 60; i++) {// 使用四边形带绘制球面
+    // 启用纹理并绑定
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, ball0.textureID);
+
+    // 设置纹理参数
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    // 使用平滑着色
+    glShadeModel(GL_SMOOTH);
+
+    for (int i = 0; i < 60; i++) {
         glBegin(GL_QUAD_STRIP);
         for (int j = 0; j < 121; j++) {
+            // 指定纹理坐标和顶点坐标
+            glTexCoord2fv(ball0.texCoords[i][j]);
             glVertex3fv(ball0.pointPlace[i][j]);
+
+            glTexCoord2fv(ball0.texCoords[i + 1][j]);
             glVertex3fv(ball0.pointPlace[i + 1][j]);
         }
         glEnd();
     }
+
+    glDisable(GL_TEXTURE_2D); // 禁用纹理
     glPopMatrix();
 }

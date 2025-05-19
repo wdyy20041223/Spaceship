@@ -1,4 +1,8 @@
+#pragma once
+#include <GL/glew.h>  // 必须放在其他OpenGL头文件之前
 #include <GL/glut.h>
+
+
 #include <stdlib.h>
 #include <math.h>
 #include <random>
@@ -18,4 +22,4 @@ inline float random_float(float min, float max) {//随机浮点数
 
 
 
-#pragma once
+
