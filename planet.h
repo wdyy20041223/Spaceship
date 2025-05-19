@@ -30,6 +30,7 @@ typedef struct ball {
     int startNum;//轨迹点开始位置
     bool selected;
 
+    GLuint ringTextureID;
     GLuint textureID;       // 纹理标识符
     CVector2 texCoords[46][121]; // 纹理坐标数组 [纬度][经度]
 };

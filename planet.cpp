@@ -17,7 +17,6 @@ float radiusCorrection = 1.2, distanceCorrection = 1.1, rotationCorrection = 1.1
 ball* selectedPlanet = nullptr; // 当前选中的行星
 
 GLuint LoadTexture(const char* path) {
-
     int width, height, channels;
     unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
     if (!data) {
@@ -25,16 +24,35 @@ GLuint LoadTexture(const char* path) {
         return 0;
     }
 
+    // 根据通道数设置OpenGL格式
+    GLenum format = GL_RGB;
+    GLenum internalFormat = GL_RGB;
+    if (channels == 4) {
+        format = GL_RGBA;
+        internalFormat = GL_RGBA;
+    }
+
     GLuint textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-        (channels == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    // 加载时指定正确的格式
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0,
+        format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // 设置纹理参数
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // 设置透明度混合参数
+    if (channels == 4) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+    }
+    else {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -115,6 +133,7 @@ void initPlanet() {
     planet[5].textureID = LoadTexture("textures/jupiter.jpg");    // 木星
     planet[6].textureID = LoadTexture("textures/saturn.jpg");     // 土星
     planet[7].textureID = LoadTexture("textures/moon.jpg");       // 月球
+    planet[6].ringTextureID = LoadTexture("textures/saturn_ring.png");  // 加载环纹理
 
     for (int i = 0; i < PLANETNUM; i++) {
         planet[i].index = i;
@@ -205,36 +224,61 @@ void initPlanet() {
 }
 
 void drawRing(ball saturn) {
-    glPushMatrix();// 应用与土星相同的变换
-    transMat1.SetTrans(CVector(saturn.orbitPoints[saturn.index].x, saturn.orbitPoints[saturn.index].y, saturn.orbitPoints[saturn.index].z));
-    rotateMat1.SetRotate(33.5, CVector(0, 0, 1));// 黄赤交角倾斜
-    rotateMat2.SetRotate(saturn.rotationAngle, CVector(0, 1, 0));// 自转角度
-    glMultMatrixf(transMat1*rotateMat1*rotateMat2);
-    // 环参数设置
-    const float innerRadius = saturn.r * 1.6f;  // 内径
-    const float outerRadius = saturn.r * 2.1f;  // 外径
-    const int segments = 72;                   // 细分段数
-    int ringCount = 40;                    // 环层数,也受F1控制
+    glPushMatrix();
+    transMat1.SetTrans(CVector(saturn.orbitPoints[saturn.index].x,
+        saturn.orbitPoints[saturn.index].y,
+        saturn.orbitPoints[saturn.index].z));
+    rotateMat1.SetRotate(33.5, CVector(0, 0, 1));
+    rotateMat2.SetRotate(saturn.rotationAngle, CVector(0, 1, 0));
+    glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
 
-    if (g_wireframe) {
-        ringCount = 8;  // 线框模式
-    }
-    else {
-        ringCount = 40;  // 填充模式
-    }
-    glColor3f(0.8f, 0.8f, 0.6f); // 土星环颜色
-    glLineWidth(1.5f);
+    // 启用混合和深度测试
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
 
-    for (int r = 0; r < ringCount; ++r) {// 绘制多层环
-        float radius = innerRadius + (outerRadius - innerRadius) * r / (ringCount - 1);
-        glBegin(GL_LINE_LOOP);
-        for (int i = 0; i < segments; ++i) {
-            float theta = 2.0f * PI * i / segments;
-            glVertex3f(radius * cos(theta), 0.0f, radius * sin(theta));
+    // 绑定环纹理
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, saturn.ringTextureID);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    // 环几何参数
+    const float inner = 1.6f * saturn.r;
+    const float outer = 2.1f * saturn.r;
+    const int slices = 72;    // 环向分段
+    const int stacks = 32;    // 径向分段
+
+    // 生成环状四边形网格
+    for (int i = 0; i < slices; ++i) {
+        float theta1 = 2.0f * PI * i / slices;
+        float theta2 = 2.0f * PI * (i + 1) / slices;
+
+        glBegin(GL_QUAD_STRIP);
+        for (int j = 0; j <= stacks; ++j) {
+            float ratio = (float)j / stacks;
+            float radius = inner + (outer - inner) * ratio;
+
+            // 纹理坐标映射
+            float s = (float)i / slices;
+            float t = ratio;
+
+            // 计算顶点位置
+            CVector v1 = CVector(radius * cos(theta1), 0, radius * sin(theta1));
+            CVector v2 = CVector(radius * cos(theta2), 0, radius * sin(theta2));
+
+            glTexCoord2f(s, t);
+            glVertex3fv(v1);
+
+            glTexCoord2f(s + 1.0f / slices, t);
+            glVertex3fv(v2);
         }
         glEnd();
     }
 
+    // 恢复状态
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
     glPopMatrix();
 }
 
@@ -316,7 +360,6 @@ void drawTrack(ball ball0) {
 }
 
 void drawBall(ball ball0) {
-
     glPushMatrix();
     transMat1.SetTrans(CVector(ball0.orbitPoints[ball0.index].x,
         ball0.orbitPoints[ball0.index].y,
@@ -325,12 +368,15 @@ void drawBall(ball ball0) {
     rotateMat2.SetRotate(ball0.rotationAngle, CVector(0, 1, 0));
     glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
 
+    // 设置材质颜色（无纹理时使用）
+    glColor3fv(ball0.color);
+
     // 启用纹理并绑定
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, ball0.textureID);
 
-    // 设置纹理参数
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    // 设置纹理环境为替换模式（重要修改！）
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
     // 使用平滑着色
     glShadeModel(GL_SMOOTH);
@@ -338,7 +384,6 @@ void drawBall(ball ball0) {
     for (int i = 0; i < 60; i++) {
         glBegin(GL_QUAD_STRIP);
         for (int j = 0; j < 121; j++) {
-            // 指定纹理坐标和顶点坐标
             glTexCoord2fv(ball0.texCoords[i][j]);
             glVertex3fv(ball0.pointPlace[i][j]);
 
@@ -348,6 +393,9 @@ void drawBall(ball ball0) {
         glEnd();
     }
 
-    glDisable(GL_TEXTURE_2D); // 禁用纹理
+    glDisable(GL_TEXTURE_2D);
+
+    // 重置颜色状态（重要！）
+    glColor3f(1.0f, 1.0f, 1.0f);
     glPopMatrix();
 }
