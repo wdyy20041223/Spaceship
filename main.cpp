@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
 
 void init() {
     // 添加全局环境光设置
-    GLfloat global_ambient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+    GLfloat global_ambient[] = { 2.0f, 2.0f, 2.0f, 1.0f };  // 原为0.6
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
     // 启用双面光照
@@ -192,9 +192,9 @@ void init() {
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0); // 启用0号光源
 
-    GLfloat light_ambient[] = { 1.4f, 1.4f, 1.4f, 1.0f };  // 适当的环境光
-    GLfloat light_diffuse[] = { 0.6f, 0.6f, 0.6f, 1.0f };  // 强漫反射
-    GLfloat light_specular[] = { 0.6f, 0.6f, 0.6f, 1.0f }; // 镜面反射
+    GLfloat light_ambient[] = { 1.8f, 1.8f, 1.8f, 1.0f };  // 原为1.4
+    GLfloat light_diffuse[] = { 1.2f, 1.2f, 1.2f, 1.0f };  // 原为0.6
+    GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 原为0.6
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
@@ -217,7 +217,8 @@ void myReshape(int w, int h) {
 }
 
 void SetRC() {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    float color = 0.05f;
+    glClearColor(color, color, color, 1.0f);
     glEnable(GL_DEPTH_TEST);  // 启用深度测试
     glMatrixMode(GL_MODELVIEW);
 }

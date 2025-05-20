@@ -336,27 +336,24 @@ void drawBall(ball ball0) {
 
     // 设置材质和纹理环境
     if (strcmp(ball0.name, "sun") == 0) {
-        // 增强自发光
-        GLfloat emission[] = { 3.0f, 2.5f, 2.0f, 1.0f };
-        // 关闭其他反射属性
-        GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        // 增强太阳自发光
+        GLfloat emission[] = { 5.0f, 4.5f, 4.0f, 1.0f };  // 原为3.0,2.5,2.0
+        // 允许少量漫反射
+        GLfloat diffuse[] = { 0.4f, 0.35f, 0.3f, 1.0f };
         glMaterialfv(GL_FRONT, GL_EMISSION, emission);
-        glMaterialfv(GL_FRONT, GL_AMBIENT, black);
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
-        glMaterialfv(GL_FRONT, GL_SPECULAR, black); 
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
     }
     else {
-        // 增强反射参数
-        GLfloat ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-        GLfloat diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-        GLfloat specular[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-        GLfloat shininess = 32.0f;
+        // 增强行星材质反射
+        GLfloat ambient[] = { 0.4f, 0.4f, 0.4f, 1.0f };  // 原为0.2
+        GLfloat diffuse[] = { 1.2f, 1.2f, 1.2f, 1.0f };  // 原为0.8
+        GLfloat specular[] = { 0.8f, 0.8f, 0.8f, 1.0f }; // 原为0.5
+        GLfloat shininess = 64.0f;                     // 原为32
 
         glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
         glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
         glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-
     }
 
     // 绘制四边形带，添加法线
@@ -431,6 +428,7 @@ void planetRotation() {//公转
 }
 
 void drawTrack(ball ball0) {
+
     // 保留原有的历史轨迹绘制（粗线）
     glPushMatrix();
     glColor3f(1, 1, 1);
