@@ -33,9 +33,11 @@ typedef struct ball {
     GLuint ringTextureID;
     GLuint textureID;       // 纹理标识符
     CVector2 texCoords[46][121]; // 纹理坐标数组 [纬度][经度]
+
+    CVector normalVectors[61][121]; // 存储每个顶点的法线
 };
 
-
+GLuint LoadTexture(const char* path);
 
 void initPlanet();
 void drawRing(ball saturn);

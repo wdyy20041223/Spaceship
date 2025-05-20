@@ -14,6 +14,8 @@
 void SetRC();
 void myReshape(int w, int h);
 void CheckCameraStateChange();
+void init();
+
 
 extern Camera globalCamera,astronautCamera,tempCamera;  // 全局摄像机对象
 extern bool ControlingGlobal;
@@ -21,69 +23,80 @@ extern bool ControlingGlobal;
 
 void myDisplay() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // 绘制3D场景
-    drawAstronaut();
-    drawPlanet();
-    drawAxis();
-    drawStars();
-    drawShip();
-
-
-    // 在3D场景绘制完成后，显示摄像机信息（作为HUD）
-    if (globalCamera.online) {
-        globalCamera.RenderInfo("Global");  // 传递视角类型
-    }
-    else {
-        astronautCamera.RenderInfo("Astronaut");  // 传递视角类型
-    }
-    glEnable(GL_DEPTH_TEST);
-
-    glutSwapBuffers();
-
     glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    CVector pos;
-    CVector forward;
-    CVector up;
-    // 设置观察点为目标点（相机位置+前向方向）
-    CVector target;
+    glLoadIdentity(); // 重置矩阵
 
+    //---------- 以下是新增/修改的关键部分 ----------
+    // 1. 先设置观察矩阵
+    CVector pos, forward, up, target;
 
-    //太空人相机同步
+    // 计算相机参数（保持原有逻辑）
+
+    // 太空人视角
     forward = astronautCamera.GetForwardDir().Normalized();
-    pos = astronaut.head;
+    pos = astronaut.head - forward * 0.025 + myShip.direction * myShip.speedLen;
     up = astronautCamera.GetUpDir();
     target = pos + forward;
-    pos = pos - forward * (0.05) + (myShip.speedLen) * myShip.direction;
-
     astronautCamera.position = pos;
 
     if (globalCamera.transition.isActive || astronautCamera.transition.isActive) {
-
         pos = tempCamera.position;
         forward = tempCamera.GetForwardDir();
         up = tempCamera.GetUpDir();
-        // 设置观察点为目标点（相机位置+前向方向）
         target = pos + forward;
     }
-    else
-    if (globalCamera.online == true) {
-        // 使用globalCamera实时位置
+    else if (globalCamera.online) {
         pos = globalCamera.position;
         forward = globalCamera.GetForwardDir();
         up = globalCamera.GetUpDir();
-        // 设置观察点为目标点（相机位置+前向方向）
-        target = pos + forward;       
+        target = pos + forward;
+    }
+        
+
+    // 然后设置视图矩阵（相机视角）
+    gluLookAt(pos.x, pos.y, pos.z,
+        target.x, target.y, target.z,
+        up.x, up.y, up.z);
+
+
+    // 3. 绘制3D场景（必须在设置矩阵和光源之后）
+    drawPlanet();
+    drawShip();
+    drawAstronaut();
+    drawAxis();
+    drawStars();
+
+    // 4. 最后绘制HUD（保持原有逻辑）
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    int currentWinWidth = glutGet(GLUT_WINDOW_WIDTH);
+    int currentWinHeight = glutGet(GLUT_WINDOW_HEIGHT);
+    gluOrtho2D(0, currentWinWidth, 0, currentWinHeight);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+
+    if (globalCamera.online) {
+        globalCamera.RenderInfo("Global");
     }
     else {
-        astronautCamera.moveSpeed = myShip.speedLen;        
+        astronautCamera.RenderInfo("Astronaut");
     }
-    gluLookAt(
-        pos.x, pos.y, pos.z,    // 相机位置
-        target.x, target.y, target.z, // 观察点
-        up.x, up.y, up.z        // 上方向
-    );
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+
+    glutSwapBuffers();
 }
 
 void myTimerFunc(int val) {
@@ -103,6 +116,10 @@ void myTimerFunc(int val) {
         globalCamera.online = true;
         ControlingGlobal = true;
     }
+
+    // 设置光源位置
+    GLfloat light_pos[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
 
     checkKeyStates();
 
@@ -124,6 +141,8 @@ void myTimerFunc(int val) {
 }
 
 int main(int argc, char* argv[]) {
+    init();
+
     testfunc();
     CalculateTest();
 
@@ -161,12 +180,39 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+void init() {
+    // 添加全局环境光设置
+    GLfloat global_ambient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
+
+    // 启用双面光照
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+    // 在初始化函数中添加
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0); // 启用0号光源
+
+    GLfloat light_ambient[] = { 1.4f, 1.4f, 1.4f, 1.0f };  // 适当的环境光
+    GLfloat light_diffuse[] = { 0.6f, 0.6f, 0.6f, 1.0f };  // 强漫反射
+    GLfloat light_specular[] = { 0.6f, 0.6f, 0.6f, 1.0f }; // 镜面反射
+
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+
+    // 禁用衰减（确保全场景光照）
+    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f);
+    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0f);
+    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0f);
+
+}
+
 void myReshape(int w, int h) {
     glViewport(0, 0, w, h);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0, (GLdouble)w / (GLdouble)h, 0.04, 100.0);
+    gluPerspective(45.0, (GLdouble)w / (GLdouble)h, 0.01, 100.0);
 
 }
 

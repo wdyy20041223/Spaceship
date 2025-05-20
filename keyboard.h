@@ -2,7 +2,8 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <GL/glut.h>
+#include <GL/glew.h>      // OpenGL扩展
+#include <GL/glut.h>      // GLUT工具包
 #include "Astronaut.h"
 
 #define SPEED_UP    'u'//飞船加减速

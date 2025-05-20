@@ -107,8 +107,8 @@ void checkKeyStates() {
         if (keyPressed[CAMERA_DOWN]) globalCamera.RotatePitch(-1.0f);
         if (keyPressed[CAMERA_LEFT]) globalCamera.RotateYaw(1.0f);
         if (keyPressed[CAMERA_RIGHT]) globalCamera.RotateYaw(-1.0f);
-        if (keyPressed[CAMERA_ROLL_LEFT]) globalCamera.RotateRoll(1.0f);
-        if (keyPressed[CAMERA_ROLL_RIGHT]) globalCamera.RotateRoll(-1.0f);
+        if (keyPressed[CAMERA_ROLL_LEFT]) globalCamera.RotateRoll(-1.0f);
+        if (keyPressed[CAMERA_ROLL_RIGHT]) globalCamera.RotateRoll(1.0f);
 
     }
     else {

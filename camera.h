@@ -5,7 +5,8 @@
 #include "CEuler.h"
 #include "CQuaternion.h"
 #include "CVector.h"
-#include <GL/glut.h>
+#include <GL/glew.h>      // OpenGL扩展
+#include <GL/glut.h>      // GLUT工具包
 
 // 相机类，支持欧拉角和本地四元数两种控制模式
 class Camera {

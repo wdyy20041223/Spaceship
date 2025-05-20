@@ -1,6 +1,8 @@
 #pragma once
 #include "CVector.h"
 #include "CEuler.h"
+#include <GL/glew.h>      // OpenGL扩展
+#include <GL/glut.h>      // GLUT工具包
 
 struct Astronaut {
     CVector position;
@@ -17,6 +19,11 @@ struct Astronaut {
     CVector head;
     float leftLegAngle;  // 左腿摆动角度
     float rightLegAngle; // 右腿摆动角度
+
+    GLuint headTexture;
+    GLuint bodyTexture;
+    GLuint armTexture;
+    GLuint legTexture;
 };
 void initAstronaut();
 void drawAstronaut();
