@@ -1,15 +1,9 @@
-﻿  main.cpp
-C:\Users\HP\Desktop\Spaceship\global.h(2,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
-  (编译源文件“main.cpp”)
-  
+﻿  camera.cpp
 C:\Users\HP\Desktop\Spaceship\planet.h(11,16): warning C4091: “typedef ”: 没有声明变量时忽略“ball”的左侧
-  (编译源文件“main.cpp”)
+  (编译源文件“camera.cpp”)
   
 C:\Users\HP\Desktop\Spaceship\ship.h(7,16): warning C4091: “typedef ”: 没有声明变量时忽略“ship”的左侧
-  (编译源文件“main.cpp”)
+  (编译源文件“camera.cpp”)
   
-C:\Users\HP\Desktop\Spaceship\star.h(3,16): warning C4091: “typedef ”: 没有声明变量时忽略“star”的左侧
-  (编译源文件“main.cpp”)
-  
-C:\Users\HP\Desktop\Spaceship\main.cpp(37,38): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\camera.cpp(315,14): warning C4305: “=”: 从“double”到“float”截断
   ConsoleApplication1.vcxproj -> C:\Users\HP\Desktop\Spaceship\run\ConsoleApplication1.exe

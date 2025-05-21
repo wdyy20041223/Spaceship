@@ -3,7 +3,7 @@
 #include "CMatrix.h"
 
 
-extern Camera globalCamera, astronautCamera;
+extern Camera globalCamera, astronautCamera, shipCamera;
 extern bool ControllingShip;
 
 void initShip() {
@@ -54,13 +54,21 @@ void drawShip() {
 
     transMat1.SetTrans(CVector(0, 0, 1.3f));
     glMultMatrixf(transMat1);
-    glPushMatrix();
-    glColor3f(0.6, 0.4, 0.7);
-    glutSolidCone(0.25f, 0.6f, 16, 5);//头
+
+    // 修改开始：头部圆锥半透明处理
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT); // 保存状态
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.6, 0.4, 0.7, 0.5); // 第4个参数0.5表示50%透明度
+    glutSolidCone(0.25f, 0.6f, 16, 5);
+    glDisable(GL_BLEND);
+    glPopAttrib(); // 恢复原始状态
+    // 修改结束
+
     glPopMatrix();
     gluDeleteQuadric(quadric);
     glPopMatrix();
-    glPopMatrix();
+    
 
     glColor3f(1.0, 0.5, 0.0);// 引擎喷口
     glPushMatrix();
@@ -77,12 +85,14 @@ void drawShip() {
     glMultMatrixf(transMat1 * scaleMat1);
     glutSolidCube(1.0);
     glPopMatrix();
+
     glPushMatrix();
     transMat1.SetTrans(CVector(-0.638, 0, 0));
     scaleMat1.SetScale(CVector(0.8, 0.1, 0.5));
     glMultMatrixf(transMat1 * scaleMat1);
     glutSolidCube(1.0);
     glPopMatrix();
+
     glPopMatrix();
 
 }

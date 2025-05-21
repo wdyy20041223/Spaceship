@@ -16,7 +16,6 @@
 #define KEY_ROLL_LEFT  'q'  // 新增滚转控制
 #define KEY_ROLL_RIGHT 'e'
 
-
 #define MAN_FRONT      'q'//太空人前进和后退
 #define MAN_BACK    'e'
 
@@ -30,7 +29,10 @@
 #define KEY_RESET   ' '//飞船复位
 
 #define MODE_SWITCH  'c'//切换控制模式
-#define MODE_SWITCH_CAMERA 'v'//切换全局相机和太空人相机
+#define MODE_SWITCH_CAMERA  'v'//切换控制模式
+#define TO_GLOBAL_CAMERA 'i'//切换相机
+#define TO_ASTRONAUT_CAMERA 'o'
+#define TO_SHIP_CAMERA 'p'
 
 //相机平移
 #define CAMERA_MOVEUP      'w'    // 相机上移

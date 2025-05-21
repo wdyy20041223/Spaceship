@@ -9,7 +9,7 @@ class CMatrix;
 extern ship myShip;
 extern CMatrix transMat1, transMat2, rotateMat1, rotateMat2, scaleMat1, scaleMat2, finalMat;
 extern Astronaut astronaut;
-extern Camera globalCamera, astronautCamera,tempCamera;
+extern Camera globalCamera, astronautCamera,tempCamera, shipCamera;
 extern bool ControlingGlobal;
 extern bool ControllingShip;
 extern CVector g_lastCamPos;

@@ -3,7 +3,7 @@
 #include "Astronaut.h"
 #include <iostream>
 
-extern Camera globalCamera, astronautCamera,tempCamera;
+extern Camera globalCamera, astronautCamera,tempCamera, shipCamera;
 extern ship myShip;
 extern Astronaut astronaut;
 extern CVector g_lastCamPos;
@@ -12,8 +12,9 @@ extern CVector g_lastCamForward;
 extern CVector g_lastCamUp;
 extern float g_lastCamSpeed;
 extern Camera::ControlMode g_lastCamMode;
+extern bool ControlingGlobal;
 
-void Camera::StartTransitionTo(const Camera& target, float duration) {
+void Camera::StartTransitionTo(Camera& target, float duration) {
 
     tempCamera = *this;
     transition.isActive = true;
@@ -22,6 +23,7 @@ void Camera::StartTransitionTo(const Camera& target, float duration) {
     tempCamera.transition.targetCamera = &target;
     tempCamera.transition.duration = duration;
     tempCamera.transition.progress = 0.00f;
+    transition.targetCamera = &target;
 }
 
 bool Camera::UpdateTransition(float deltaTime) {
@@ -36,6 +38,16 @@ bool Camera::UpdateTransition(float deltaTime) {
 
     if (tempCamera.transition.progress >= 1.0f) {
         // 过渡完成
+        globalCamera.online = false;
+        astronautCamera.online = false;
+        shipCamera.online = false;
+        transition.targetCamera->online = true;
+        if (tempCamera.transition.targetCamera == &globalCamera) {
+            ControlingGlobal = true;
+        }
+        else{
+            ControlingGlobal = false;
+        }
         transition.isActive = false;
         return true;
     }
@@ -293,7 +305,11 @@ const char* Camera::GetControlModeString() const {
 
 void initCamera() {
     globalCamera.position = CVector(5, 5, 5);
+
     globalCamera.online = true;
+    astronautCamera.online = false;
+    shipCamera.online = false;
+
     CEuler temp;
     temp.h = 45;
     temp.p = -35.264;
@@ -301,12 +317,16 @@ void initCamera() {
     temp.b = 0;
     globalCamera.eulerAngles = temp;
     globalCamera.UpdateOrientationFromEuler();
-    globalCamera.SwitchControlMode(Camera::LOCAL);
+    globalCamera.SwitchControlMode(Camera::EULER);
     globalCamera.moveSpeed = 0.04f;
 
-    astronautCamera.SwitchControlMode(Camera::LOCAL);
+    astronautCamera.SwitchControlMode(Camera::EULER);
     astronautCamera.eulerAngles = CEuler(180, 0, 0); // 朝向 Z 轴正方向
     astronautCamera.UpdateOrientationFromEuler();   // 同步四元数
+
+    shipCamera.SwitchControlMode(Camera::EULER);
+    shipCamera.eulerAngles = CEuler(180, 0, 0); // 朝向 Z 轴正方向
+    shipCamera.UpdateOrientationFromEuler();   // 同步四元数
 
     g_lastCamPos = globalCamera.position;
     g_lastCamEuler = globalCamera.GetEulerAngles();

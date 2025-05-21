@@ -13,61 +13,85 @@ bool specialKeyPressed[256] = { false };
 extern ship myShip;
 extern ball* selectedPlanet;
 extern bool g_wireframe;
-extern Camera globalCamera, astronautCamera;
+extern Camera globalCamera, astronautCamera,shipCamera;
 extern bool ControlingGlobal, ControllingShip;
 
 // 普通按键按下回调
 void keyboardDown(unsigned char key, int x, int y) {
+    float time = 1.5f;
 
     keyPressed[key] = true;
     // 单次触发型操作
     switch (key) {
-    case KEY_RESET:
-        initShip();
-        break;
-    case 13: // 回车键
-        if (selectedPlanet) {
-            myShip.autoPilot = !myShip.autoPilot;
-            if (myShip.autoPilot)
-                myShip.targetBall = selectedPlanet;
-            else {
-                if (myShip.speedLen <= myShip.speedStep * 2) {
-                    myShip.speedLen = myShip.speedTempLen;
+        case KEY_RESET:
+            initShip();
+            break;
+        case 13: // 回车键
+            if (selectedPlanet) {
+                myShip.autoPilot = !myShip.autoPilot;
+                if (myShip.autoPilot)
+                    myShip.targetBall = selectedPlanet;
+                else {
+                    if (myShip.speedLen <= myShip.speedStep * 2) {
+                        myShip.speedLen = myShip.speedTempLen;
+                    }
                 }
             }
-        }
-        break;
-    case MODE_SWITCH:
-        if (globalCamera.online == true) {
-            if (globalCamera.currentMode == Camera::EULER) {
-                globalCamera.SwitchControlMode(Camera::LOCAL);
+            break;
+        case MODE_SWITCH:
+            if (globalCamera.online == true) {
+                if (globalCamera.currentMode == Camera::EULER) {
+                    globalCamera.SwitchControlMode(Camera::LOCAL);
+                }
+                else {
+                    globalCamera.SwitchControlMode(Camera::EULER);
+                }
+                break;
             }
             else {
-                globalCamera.SwitchControlMode(Camera::EULER);
+                if (astronautCamera.currentMode == Camera::EULER) {
+                    astronautCamera.SwitchControlMode(Camera::LOCAL);
+                }
+                else {
+                    astronautCamera.SwitchControlMode(Camera::EULER);
+                }
+                break;
             }
-            break;
-        }
-        else {
-            if (astronautCamera.currentMode == Camera::EULER) {
-                astronautCamera.SwitchControlMode(Camera::LOCAL);
-            }
-            else {
-                astronautCamera.SwitchControlMode(Camera::EULER);
-            }
-            break;
-        }
         
-    case MODE_SWITCH_CAMERA:
-        if (globalCamera.online) {
-            // 当前是全局视角，过渡到宇航员视角
-            globalCamera.StartTransitionTo(astronautCamera,globalCamera.transition.duration);
+        case MODE_SWITCH_CAMERA:
+            if (globalCamera.online) {
+                // 当前是全局视角，过渡到宇航员视角
+                globalCamera.StartTransitionTo(astronautCamera,globalCamera.transition.duration);
+            }
+            else {
+                // 当前是宇航员视角，过渡到全局视角
+                astronautCamera.StartTransitionTo(globalCamera,astronautCamera.transition.duration);
+            }       
+            break;
+        case TO_GLOBAL_CAMERA: // 'i'键
+            if (globalCamera.online) break;
+            if (astronautCamera.online)
+                astronautCamera.StartTransitionTo(globalCamera, time);
+            else if (shipCamera.online)
+                shipCamera.StartTransitionTo(globalCamera, time);
+            break;
+
+        case TO_ASTRONAUT_CAMERA: // 'o'键
+            if (astronautCamera.online) break;
+            if (globalCamera.online)
+                globalCamera.StartTransitionTo(astronautCamera, time);
+            else if (shipCamera.online)
+                shipCamera.StartTransitionTo(astronautCamera, time);
+            break;
+
+        case TO_SHIP_CAMERA: // 'p'键
+            if (shipCamera.online) {  break; }
+            if (globalCamera.online)
+                globalCamera.StartTransitionTo(shipCamera, time);
+            else if (astronautCamera.online)
+                astronautCamera.StartTransitionTo(shipCamera, time);
+            break;
         }
-        else {
-            // 当前是宇航员视角，过渡到全局视角
-            astronautCamera.StartTransitionTo(globalCamera,astronautCamera.transition.duration);
-        }       
-        break;
-    }
 
 }
 // 普通按键释放回调
@@ -96,7 +120,7 @@ void specialUp(int key, int x, int y) {
 }
 // 每帧检测按键状态
 void checkKeyStates() {
-    if (globalCamera.transition.isActive || astronautCamera.transition.isActive) {
+    if (globalCamera.transition.isActive || astronautCamera.transition.isActive || shipCamera.transition.isActive) {
         return;
     }
 
@@ -116,8 +140,8 @@ void checkKeyStates() {
         if (keyPressed[CAMERA_DOWN]) astronautCamera.RotatePitch(-1.0f);
         if (keyPressed[CAMERA_LEFT]) astronautCamera.RotateYaw(1.0f);
         if (keyPressed[CAMERA_RIGHT]) astronautCamera.RotateYaw(-1.0f);
-        if (keyPressed[CAMERA_ROLL_LEFT]) astronautCamera.RotateRoll(1.0f);
-        if (keyPressed[CAMERA_ROLL_RIGHT]) astronautCamera.RotateRoll(-1.0f);
+        if (keyPressed[CAMERA_ROLL_LEFT]) astronautCamera.RotateRoll(-1.0f);
+        if (keyPressed[CAMERA_ROLL_RIGHT]) astronautCamera.RotateRoll(1.0f);
     }
 
     // 速度控制
@@ -128,8 +152,8 @@ void checkKeyStates() {
         myShip.speedLen = 0;
     }
 
-    if (ControlingGlobal) {
-        if (!ControllingShip) {
+    if (ControlingGlobal || shipCamera.online) {
+        if (!ControllingShip && !shipCamera.online) {
             {
                 if (keyPressed[CAMERA_MOVEUP])    {globalCamera.moveSpeed = 0.04f; globalCamera.MoveUp(); }
                 if (keyPressed[CAMERA_MOVEDOWN])  {globalCamera.moveSpeed = 0.04f; globalCamera.MoveDown(); }
@@ -142,33 +166,48 @@ void checkKeyStates() {
         }
         else {
             if (!myShip.autoPilot) {
-
                 // 方向控制
                 if (keyPressed[KEY_UP]) {
-                    myShip.upDownAngle += myShip.angleStep; astronautCamera.RotatePitch(myShip.angleStep);
+                    myShip.upDownAngle += myShip.angleStep; 
+                    astronautCamera.RotatePitch(myShip.angleStep);
                     astronautCamera.Update();
+                    shipCamera.RotatePitch(myShip.angleStep);
+                    shipCamera.Update();
                 }
                 if (keyPressed[KEY_DOWN]) {
-                    myShip.upDownAngle -= myShip.angleStep; astronautCamera.RotatePitch(-myShip.angleStep);
+                    myShip.upDownAngle -= myShip.angleStep; 
+                    astronautCamera.RotatePitch(-myShip.angleStep);
                     astronautCamera.Update();
+                    shipCamera.RotatePitch(-myShip.angleStep);
+                    shipCamera.Update();
                 }
                 if (keyPressed[KEY_LEFT]) {
-                    myShip.leftRightAngle += myShip.angleStep; astronautCamera.RotateYaw(myShip.angleStep);
+                    myShip.leftRightAngle += myShip.angleStep; 
+                    astronautCamera.RotateYaw(myShip.angleStep);
                     astronautCamera.Update();
+                    shipCamera.RotateYaw(myShip.angleStep);
+                    shipCamera.Update();
                 }
                 if (keyPressed[KEY_RIGHT]) {
-                    myShip.leftRightAngle -= myShip.angleStep; astronautCamera.RotateYaw(-myShip.angleStep);
+                    myShip.leftRightAngle -= myShip.angleStep;
+                    astronautCamera.RotateYaw(-myShip.angleStep);
                     astronautCamera.Update();
+                    shipCamera.RotateYaw(-myShip.angleStep);
+                    shipCamera.Update();
                 }
                 if (keyPressed[KEY_ROLL_LEFT]) {
-                    myShip.rollAngle += myShip.angleStep;
-                    astronautCamera.RotateRoll(myShip.angleStep); // 改为正角度
+                    myShip.rollAngle -= myShip.angleStep;
+                    astronautCamera.RotateRoll(-myShip.angleStep); // 改为正角度
                     astronautCamera.Update(); // 确保更新状态
+                    shipCamera.RotateRoll(-myShip.angleStep); // 改为正角度
+                    shipCamera.Update(); // 确保更新状态
                 }
                 if (keyPressed[KEY_ROLL_RIGHT]) {
-                    myShip.rollAngle -= myShip.angleStep;
-                    astronautCamera.RotateRoll(-myShip.angleStep); // 改为负角度
+                    myShip.rollAngle += myShip.angleStep;
+                    astronautCamera.RotateRoll(+myShip.angleStep); // 改为负角度
                     astronautCamera.Update(); // 确保更新状态
+                    shipCamera.RotateRoll(+myShip.angleStep); // 改为负角度
+                    shipCamera.Update(); // 确保更新状态
                 }
             }
         }       

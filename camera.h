@@ -18,11 +18,11 @@ public:
         float progress = 0.0f;        // 当前进度（0.0~1.0）
         CVector startPos;             // 起始位置
         CQuaternion startOrientation; // 起始朝向
-        const Camera* targetCamera = nullptr; // 目标相机指针
+        Camera* targetCamera = nullptr; // 目标相机指针
         float duration = 1.0f;        // 过渡总时间
     } transition;
 
-    void StartTransitionTo(const Camera& target, float duration); // 启动过渡
+    void StartTransitionTo(Camera& target, float duration); // 启动过渡
     bool UpdateTransition(float deltaTime); // 更新过渡状态，返回是否完成
 
 
@@ -74,7 +74,7 @@ public:
     // 状态更新后同步数据并打印调试信息
     void Update();
 
-
+    void DrawLocalAxes(float length) const;
 private:
     // 文字渲染辅助方法声明
     void RenderString(int x, int y, const char* str) const;

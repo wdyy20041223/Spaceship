@@ -17,7 +17,7 @@ void CheckCameraStateChange();
 void init();
 
 
-extern Camera globalCamera,astronautCamera,tempCamera;  // 全局摄像机对象
+extern Camera globalCamera,astronautCamera,tempCamera, shipCamera;  // 全局摄像机对象
 extern bool ControlingGlobal;
 
 
@@ -29,17 +29,24 @@ void myDisplay() {
     //---------- 以下是新增/修改的关键部分 ----------
     // 1. 先设置观察矩阵
     CVector pos, forward, up, target;
-
-    // 计算相机参数（保持原有逻辑）
+    CVector astronautPos, astronautForward, astronautUp, astronautTarget;
+    CVector shipPos, shipForward, shipUp, shipTarget;
 
     // 太空人视角
-    forward = astronautCamera.GetForwardDir().Normalized();
-    pos = astronaut.head - forward * 0.025 + myShip.direction * myShip.speedLen;
-    up = astronautCamera.GetUpDir();
-    target = pos + forward;
-    astronautCamera.position = pos;
+    astronautForward = astronautCamera.GetForwardDir().Normalized();
+    astronautPos = astronaut.head - astronautForward * 0.025 + myShip.direction * myShip.speedLen;
+    astronautUp = astronautCamera.GetUpDir();
+    astronautTarget = astronautPos + astronautForward;
+    astronautCamera.position = astronautPos;
+    // 飞船视角
+    shipForward = myShip.direction;
+    shipPos = myShip.position + shipForward * 0.048;
+    shipUp = shipCamera.GetUpDir();
+    shipTarget = shipPos + shipForward;
+    shipCamera.position = shipPos;
+    //shipCamera.orientation = myShip.
 
-    if (globalCamera.transition.isActive || astronautCamera.transition.isActive) {
+    if (globalCamera.transition.isActive || astronautCamera.transition.isActive || shipCamera.transition.isActive) {
         pos = tempCamera.position;
         forward = tempCamera.GetForwardDir();
         up = tempCamera.GetUpDir();
@@ -51,7 +58,16 @@ void myDisplay() {
         up = globalCamera.GetUpDir();
         target = pos + forward;
     }
-        
+    else if (astronautCamera.online) {
+        pos = astronautPos;
+        up = astronautUp;
+        target = astronautTarget;
+    }
+    else {
+        pos = shipPos;
+        up = shipUp;
+        target = shipTarget;
+    }
 
     // 然后设置视图矩阵（相机视角）
     gluLookAt(pos.x, pos.y, pos.z,
@@ -84,8 +100,11 @@ void myDisplay() {
     if (globalCamera.online) {
         globalCamera.RenderInfo("Global");
     }
-    else {
+    else if(astronautCamera.online){
         astronautCamera.RenderInfo("Astronaut");
+    }
+    else{
+        shipCamera.RenderInfo("Ship");
     }
 
     glEnable(GL_DEPTH_TEST);
@@ -102,20 +121,10 @@ void myDisplay() {
 void myTimerFunc(int val) {
     float deltaTime = 33.0f / 1000.0f; // 33ms per frame
 
-    // 更新相机过渡状态
+    //更新相机过渡状态
     bool globalCompleted = globalCamera.UpdateTransition(deltaTime);
     bool astronautCompleted = astronautCamera.UpdateTransition(deltaTime);
-    // 处理过渡完成后的控制权切换
-    if (globalCompleted) {
-        globalCamera.online = false;
-        astronautCamera.online = true;
-        ControlingGlobal = false;
-    }
-    if (astronautCompleted) {
-        astronautCamera.online = false;
-        globalCamera.online = true;
-        ControlingGlobal = true;
-    }
+    bool shipCompleted = shipCamera.UpdateTransition(deltaTime);
 
     // 设置光源位置
     GLfloat light_pos[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -181,6 +190,7 @@ int main(int argc, char* argv[]) {
 }
 
 void init() {
+    myShip.direction = CVector(0, 1, 0);
     // 添加全局环境光设置
     GLfloat global_ambient[] = { 2.0f, 2.0f, 2.0f, 1.0f };  // 原为0.6
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
