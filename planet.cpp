@@ -4,6 +4,7 @@
 #include "ship.h"
 #include "global.h"
 #include "CMatrix.h" 
+#include <GL/glut.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -324,6 +325,7 @@ void drawBall(ball ball0) {
     rotateMat2.SetRotate(ball0.rotationAngle, CVector(0, 1, 0));
     glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
 
+
     // 设置材质颜色（无纹理时使用）
     //glColor3fv(ball0.color);
 
@@ -331,8 +333,10 @@ void drawBall(ball ball0) {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, ball0.textureID);
 
+
     glEnable(GL_LIGHTING); // 确保启用
     glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1); // 确保启用飞船前灯
 
     // 设置材质和纹理环境
     if (strcmp(ball0.name, "sun") == 0) {
@@ -344,11 +348,12 @@ void drawBall(ball ball0) {
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
     }
     else {
+
         // 增强行星材质反射
-        GLfloat ambient[] = { 0.4f, 0.4f, 0.4f, 1.0f };  // 原为0.2
-        GLfloat diffuse[] = { 1.2f, 1.2f, 1.2f, 1.0f };  // 原为0.8
-        GLfloat specular[] = { 0.8f, 0.8f, 0.8f, 1.0f }; // 原为0.5
-        GLfloat shininess = 64.0f;                     // 原为32
+        GLfloat ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };  // 降低环境光
+        GLfloat diffuse[] = { 0.9f, 0.9f, 0.9f, 1.0f };  // 保持高漫反射
+        GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 最大化镜面反射
+        GLfloat shininess = 128.0f;                   // 增加光泽度
 
         glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
@@ -370,31 +375,7 @@ void drawBall(ball ball0) {
         }
         glEnd();
     }
-    //------------------------------------------------------
-    //glDisable(GL_LIGHTING);
-    //glDisable(GL_TEXTURE_2D);
-    //glColor3f(1.0f, 0.0f, 0.0f); // 红色法线
-
-    //const float normalScale = 0.15f; // 法线显示长度
-
-    //// 遍历所有顶点（根据你的数据结构调整循环范围）
-    //for (int i = 0; i < 61; i += 2) { // 间隔采样减少线条数量
-    //    for (int j = 0; j < 121; j += 2) {
-    //        CVector point = ball0.pointPlace[i][j];
-    //        CVector normal = ball0.normalVectors[i][j] * normalScale;
-
-    //        glBegin(GL_LINES);
-    //        glVertex3f(point.x, point.y, point.z);
-    //        glVertex3f(point.x + normal.x,
-    //            point.y + normal.y,
-    //            point.z + normal.z);
-    //        glEnd();
-    //    }
-    //}
-
-    //glEnable(GL_LIGHTING);
-    //glEnable(GL_TEXTURE_2D);
-    //------------------------------------------------------
+    
     // 恢复默认设置
     glDisable(GL_LIGHTING);
     glDisable(GL_TEXTURE_2D);

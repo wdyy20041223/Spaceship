@@ -32,19 +32,23 @@ void myDisplay() {
     CVector astronautPos, astronautForward, astronautUp, astronautTarget;
     CVector shipPos, shipForward, shipUp, shipTarget;
 
+    //全局相机
+    globalCamera.position = globalCamera.origonPos;
     // 太空人视角
     astronautForward = astronautCamera.GetForwardDir().Normalized();
-    astronautPos = astronaut.head - astronautForward * 0.025 + myShip.direction * myShip.speedLen;
+    astronautCamera.position = astronautCamera.origonPos - astronautForward * 0.025;
+    astronautPos = astronautCamera.position;
     astronautUp = astronautCamera.GetUpDir();
     astronautTarget = astronautPos + astronautForward;
-    astronautCamera.position = astronautPos;
+    //astronautCamera.position = astronautPos;
+    astronautCamera.moveSpeed = myShip.speedLen;
     // 飞船视角
-    shipForward = myShip.direction;
-    shipPos = myShip.position + shipForward * 0.048;
+    shipForward = shipCamera.GetForwardDir().Normalized();
+    shipCamera.position = shipCamera.origonPos + shipForward * 0.248;
+    shipPos = shipCamera.position ;
     shipUp = shipCamera.GetUpDir();
     shipTarget = shipPos + shipForward;
-    shipCamera.position = shipPos;
-    //shipCamera.orientation = myShip.
+    shipCamera.moveSpeed = myShip.speedLen;
 
     if (globalCamera.transition.isActive || astronautCamera.transition.isActive || shipCamera.transition.isActive) {
         pos = tempCamera.position;
@@ -69,20 +73,16 @@ void myDisplay() {
         target = shipTarget;
     }
 
-    // 然后设置视图矩阵（相机视角）
     gluLookAt(pos.x, pos.y, pos.z,
         target.x, target.y, target.z,
         up.x, up.y, up.z);
 
-
-    // 3. 绘制3D场景（必须在设置矩阵和光源之后）
     drawPlanet();
     drawShip();
     drawAstronaut();
     drawAxis();
     drawStars();
 
-    // 4. 最后绘制HUD（保持原有逻辑）
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -99,12 +99,15 @@ void myDisplay() {
 
     if (globalCamera.online) {
         globalCamera.RenderInfo("Global");
+        globalCamera.OptionInfo("Global");
     }
     else if(astronautCamera.online){
         astronautCamera.RenderInfo("Astronaut");
+        astronautCamera.OptionInfo("Astronaut");
     }
     else{
         shipCamera.RenderInfo("Ship");
+        shipCamera.OptionInfo("Ship");
     }
 
     glEnable(GL_DEPTH_TEST);
@@ -130,6 +133,21 @@ void myTimerFunc(int val) {
     GLfloat light_pos[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
 
+    CVector tempPos = CVector(1.0, 0, 1.0);
+    GLfloat lightPos[] = { tempPos.x, tempPos.y,
+                        tempPos.z, 1.0f };
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos);
+
+
+    // 更新聚光灯参数
+    float len = 0.1;
+    GLfloat lightPos2[] = {(myShip.position + myShip.direction * len).x, (myShip.position + myShip.direction * len).y,
+                         (myShip.position + myShip.direction * len).z, 1.0f};
+    GLfloat spotDir2[] = { myShip.direction.x,myShip.direction.y,myShip.direction.z};
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos2);
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spotDir2);
+
+
     checkKeyStates();
 
     autoShip();
@@ -150,7 +168,6 @@ void myTimerFunc(int val) {
 }
 
 int main(int argc, char* argv[]) {
-    init();
 
     testfunc();
     CalculateTest();
@@ -169,6 +186,7 @@ int main(int argc, char* argv[]) {
 
     glutReshapeFunc(myReshape);//窗口大小改变回调
 
+    init();
     initstar();
     initPlanet();
     initShip();
@@ -192,7 +210,7 @@ int main(int argc, char* argv[]) {
 void init() {
     myShip.direction = CVector(0, 1, 0);
     // 添加全局环境光设置
-    GLfloat global_ambient[] = { 2.0f, 2.0f, 2.0f, 1.0f };  // 原为0.6
+    GLfloat global_ambient[] = { 0.2f,0.2f,0.2f, 1.0f };  // 原为0.6
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
     // 启用双面光照
@@ -202,19 +220,52 @@ void init() {
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0); // 启用0号光源
 
-    GLfloat light_ambient[] = { 1.8f, 1.8f, 1.8f, 1.0f };  // 原为1.4
-    GLfloat light_diffuse[] = { 1.2f, 1.2f, 1.2f, 1.0f };  // 原为0.6
-    GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // 原为0.6
+    // 太阳光源位置应设置为无限远方向光
+    GLfloat sun_position[] = {
+        0,0,0,
+        0.0f  // 重要！0.0表示平行光，非定位光源
+    };
 
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    glLightfv(GL_LIGHT0, GL_POSITION, sun_position);
+    // 更符合真实太阳光照比例
+    GLfloat sun_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };  // 环境光保持较低
+    GLfloat sun_diffuse[] = { 1,1,1.0f, 1.0f };  // 增加亮度20%
+    GLfloat sun_specular[] = { 1.5f, 1.5f, 1.2f, 1.0f }; // 增强镜面高光
 
-    // 禁用衰减（确保全场景光照）
-    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f);
-    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0f);
-    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0f);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, sun_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, sun_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, sun_specular);
 
+    glEnable(GL_LIGHT1);
+
+    // 聚光灯参数配置
+    GLfloat light_diffuse2[] = { 1,1,1.0f, 1.0f }; // 降低20%亮度
+    GLfloat light_ambient2[] = { 0.2f, 0.2f, 0.2f, 1.0f };  // 弱环境光
+    GLfloat light_specular2[] = { 0.8f, 0.8f, 0.8f, 1.0f }; // 适量镜面反射
+
+    // 衰减系数（根据飞船尺寸调整）
+    GLfloat att_constant = 1.0f;  // 基础衰减
+    GLfloat att_linear = 0.15f;   // 线性衰减系数
+    GLfloat att_quadratic = 0.03f;// 二次衰减系数
+
+    // 聚光特性
+    GLfloat spot_cutoff = 45.0f;  // 截止角度
+    GLfloat spot_exponent = 10.0f; // 光锥集中度
+
+    // 设置基础光照参数
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse2);
+    glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient2);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular2);
+
+    // 配置衰减系数（重要！）
+    glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, att_constant);
+    glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, att_linear);
+    glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, att_quadratic);
+
+    // 聚光灯特性设置
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, spot_cutoff);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, spot_exponent);
+    
 }
 
 void myReshape(int w, int h) {
@@ -227,7 +278,7 @@ void myReshape(int w, int h) {
 }
 
 void SetRC() {
-    float color = 0.05f;
+    float color = 0.00f;
     glClearColor(color, color, color, 1.0f);
     glEnable(GL_DEPTH_TEST);  // 启用深度测试
     glMatrixMode(GL_MODELVIEW);

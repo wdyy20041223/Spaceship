@@ -9,6 +9,7 @@
 #define M_PI 3.14159265358979323846f
 #endif
 
+
 // 将矩阵转换为四元数
 CQuaternion CMatrix::ToQuaternion() const {
     float m00 = this->m00, m01 = this->m01, m02 = this->m02;

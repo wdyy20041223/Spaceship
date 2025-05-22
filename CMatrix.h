@@ -13,6 +13,8 @@ public:
 	float m02, m12, m22, m32;
 	float m03, m13, m23, m33;
 
+	CVector TransformPoint(const CVector& point) const;
+
 	void Set(float* p);	//给矩阵16个元素赋值
 	CMatrix& operator=(const CMatrix& p);//矩阵赋值
 	CMatrix operator*(float d);//矩阵数乘

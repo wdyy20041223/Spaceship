@@ -2,7 +2,6 @@
 #include "CVector.h"
 #include "CEuler.h"
 #include <GL/glew.h>      // OpenGL扩展
-#include <GL/glut.h>      // GLUT工具包
 
 struct Astronaut {
     CVector position;

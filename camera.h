@@ -6,7 +6,7 @@
 #include "CQuaternion.h"
 #include "CVector.h"
 #include <GL/glew.h>      // OpenGL扩展
-#include <GL/glut.h>      // GLUT工具包
+   // GLUT工具包
 
 // 相机类，支持欧拉角和本地四元数两种控制模式
 class Camera {
@@ -30,15 +30,19 @@ public:
     enum ControlMode { EULER, LOCAL };
 
     CVector position;         // 世界空间中的位置坐标
+    CVector origonPos;
     CQuaternion orientation; // 四元数表示的朝向
     CEuler eulerAngles;       // 欧拉角表示的旋转（弧度制）
     ControlMode currentMode;  // 当前控制模式
+    float speedLen;
     float moveSpeed;          // 移动速度单位/秒
     float rotateSpeed;        // 旋转速度角度/秒
     bool online;
     CEuler allAngles;
 
+
     void RenderInfo(const char* viewType) const;
+    void OptionInfo(const char* viewType) const;
     const char* GetControlModeString() const;
 
     Camera();

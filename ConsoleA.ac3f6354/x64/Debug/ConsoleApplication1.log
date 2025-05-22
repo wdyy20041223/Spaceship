@@ -5,5 +5,13 @@ C:\Users\HP\Desktop\Spaceship\planet.h(11,16): warning C4091: “typedef ”: �
 C:\Users\HP\Desktop\Spaceship\ship.h(7,16): warning C4091: “typedef ”: 没有声明变量时忽略“ship”的左侧
   (编译源文件“camera.cpp”)
   
-C:\Users\HP\Desktop\Spaceship\camera.cpp(315,14): warning C4305: “=”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\camera.cpp(330,14): warning C4305: “=”: 从“double”到“float”截断
+  keyboard.cpp
+C:\Users\HP\Desktop\Spaceship\planet.h(11,16): warning C4091: “typedef ”: 没有声明变量时忽略“ball”的左侧
+  (编译源文件“keyboard.cpp”)
+  
+C:\Users\HP\Desktop\Spaceship\ship.h(7,16): warning C4091: “typedef ”: 没有声明变量时忽略“ship”的左侧
+  (编译源文件“keyboard.cpp”)
+  
+  正在生成代码...
   ConsoleApplication1.vcxproj -> C:\Users\HP\Desktop\Spaceship\run\ConsoleApplication1.exe

@@ -102,9 +102,10 @@ void drawAstronaut() {
     scaleMat1.SetScale(CVector(0.444, 1, 0.333));
     glMultMatrixf(transMat1 * scaleMat1);
 
-    // 配置立方体贴图参数
-    GLfloat sPlane[] = { 2.25f, 0.0f, 0.0f, 0.0f };  // 1/0.444 ≈ 2.25
-    GLfloat tPlane[] = { 0.0f, 0.0f, 3.0f, 0.0f };   // 1/0.333 ≈ 3
+    // 调整后的纹理生成平面参数
+    GLfloat sPlane[] = { 1.0f, 0.0f, 0.0f, 0.0f };  // X轴方向，系数从2.25降为1.0
+    GLfloat tPlane[] = { 0.0f, 1.0f, 0.0f, 0.0f };   // Y轴方向
+
     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
     glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
     glTexGenfv(GL_S, GL_OBJECT_PLANE, sPlane);

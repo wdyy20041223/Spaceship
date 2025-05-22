@@ -101,6 +101,8 @@ void shipMove() {
     myShip.direction = getShipDir(myShip);
     myShip.speed = myShip.direction * myShip.speedLen;
     myShip.position = myShip.position + myShip.speed;
+    astronautCamera.origonPos = astronautCamera.origonPos + myShip.speed;
+    shipCamera.origonPos = shipCamera.origonPos + myShip.speed;
 }
 
 CVector getShipDir(ship myShip) {
@@ -210,4 +212,10 @@ void drawAxis() {
     glMultMatrixf(transMat1);
     glutSolidCone(0.05f, 0.1f, 36, 10);
     glPopMatrix();
+
+    //glPushMatrix();
+    //glTranslatef(1.0, 0, 1.0); // 初始位置
+    //glColor3f(1, 0, 0);
+    //glutSolidSphere(0.1, 8, 8); // 红色小球标记光源
+    //glPopMatrix();
 }

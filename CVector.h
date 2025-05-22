@@ -155,6 +155,8 @@ public:
     CVector operator-() const {
         return CVector(-x, -y, -z);
     }
+
+    
 };
 
 #endif // CVECTOR_H

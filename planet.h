@@ -3,7 +3,7 @@
 #define PLANET_H  
 
 #include <GL/glew.h>    // ±ØÐëµÚÒ»
-#include <GL/glut.h>
+
 
 #include "CVector.h" 
 class CMatrix;

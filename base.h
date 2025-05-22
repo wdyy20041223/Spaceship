@@ -1,7 +1,5 @@
 #pragma once
 #include <GL/glew.h>  // 必须放在其他OpenGL头文件之前
-#include <GL/glut.h>
-
 
 #include <stdlib.h>
 #include <math.h>

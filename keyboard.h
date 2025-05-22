@@ -3,7 +3,7 @@
 #define KEYBOARD_H
 
 #include <GL/glew.h>      // OpenGL扩展
-#include <GL/glut.h>      // GLUT工具包
+
 #include "Astronaut.h"
 
 #define SPEED_UP    'u'//飞船加减速
@@ -16,8 +16,6 @@
 #define KEY_ROLL_LEFT  'q'  // 新增滚转控制
 #define KEY_ROLL_RIGHT 'e'
 
-#define MAN_FRONT      'q'//太空人前进和后退
-#define MAN_BACK    'e'
 
 #define CAMERA_UP      't'//全局相机或太空人相机旋转方向控制
 #define CAMERA_DOWN    'g'

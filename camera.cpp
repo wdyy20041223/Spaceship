@@ -2,6 +2,7 @@
 #include "ship.h"
 #include "Astronaut.h"
 #include <iostream>
+#include <GL/glut.h>
 
 extern Camera globalCamera, astronautCamera,tempCamera, shipCamera;
 extern ship myShip;
@@ -12,7 +13,7 @@ extern CVector g_lastCamForward;
 extern CVector g_lastCamUp;
 extern float g_lastCamSpeed;
 extern Camera::ControlMode g_lastCamMode;
-extern bool ControlingGlobal;
+extern bool ControlingGlobal,needGuide;
 
 void Camera::StartTransitionTo(Camera& target, float duration) {
 
@@ -70,7 +71,8 @@ Camera::Camera()
     rotateSpeed(1.0f) {
     eulerAngles = orientation.ToEuler();
     eulerAngles.Normal(); // 规范化欧拉角到标准范围
-}
+    }
+    
 
 /* 切换控制模式
  * newMode: 目标模式（EULER 或 LOCAL）
@@ -92,27 +94,33 @@ void Camera::SwitchControlMode(ControlMode newMode) {
 }
 
 void Camera::MoveUp() {
-    position = position + GetUpDir() * moveSpeed;
+    origonPos = origonPos + GetUpDir() * speedLen;
+
 }
 
 void Camera::MoveDown() {
-    position = position - GetUpDir() * moveSpeed;
+    origonPos = origonPos - GetUpDir() * speedLen;
+
 }
 
 void Camera::MoveLeft() {
-    position = position - GetRightDir() * moveSpeed;
+    origonPos = origonPos - GetRightDir() * speedLen;
+
 }
 
 void Camera::MoveRight() {
-    position = position + GetRightDir() * moveSpeed;
+    origonPos = origonPos + GetRightDir() * speedLen;
+
 }
 
 void Camera::MoveFront() {
-    position = position + GetForwardDir() * moveSpeed;
+    origonPos = origonPos + GetForwardDir() * speedLen;
+
 }
 
 void Camera::MoveBack() {
-    position = position - GetForwardDir() * moveSpeed;
+    origonPos = origonPos - GetForwardDir() * speedLen;
+
 }
 
 /* 偏航旋转（绕垂直轴）
@@ -240,9 +248,12 @@ void Camera::RenderInfo(const char* viewType) const {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    glColor3f(0.9f, 0.0f, 0.9f); // 亮绿色
+    glColor3f(0.9f, 0.0f, 0.9f); 
     GLint yPos = viewport[3] - 30; // 从顶部开始
     char buffer[256];
+    snprintf(buffer, sizeof(buffer), "--------Camera Info--------");
+    RenderString(10, yPos, buffer);
+    yPos -= 20;
     snprintf(buffer, sizeof(buffer), "View: %s", viewType);
     RenderString(10, yPos, buffer);
     yPos -= 20;
@@ -304,11 +315,15 @@ const char* Camera::GetControlModeString() const {
 }
 
 void initCamera() {
-    globalCamera.position = CVector(5, 5, 5);
+    globalCamera.origonPos = CVector(5, 5, 5);
 
     globalCamera.online = true;
     astronautCamera.online = false;
     shipCamera.online = false;
+
+    globalCamera.transition.isActive = false;
+    astronautCamera.transition.isActive = false;
+    shipCamera.transition.isActive = false;
 
     CEuler temp;
     temp.h = 45;
@@ -318,15 +333,21 @@ void initCamera() {
     globalCamera.eulerAngles = temp;
     globalCamera.UpdateOrientationFromEuler();
     globalCamera.SwitchControlMode(Camera::EULER);
-    globalCamera.moveSpeed = 0.04f;
+
+    globalCamera.speedLen = 0.04f;
+    astronautCamera.speedLen = 0.001f;
+    shipCamera.speedLen = 0.001f;
 
     astronautCamera.SwitchControlMode(Camera::EULER);
     astronautCamera.eulerAngles = CEuler(180, 0, 0); // 朝向 Z 轴正方向
     astronautCamera.UpdateOrientationFromEuler();   // 同步四元数
+    astronautCamera.origonPos = myShip.position;
 
     shipCamera.SwitchControlMode(Camera::EULER);
     shipCamera.eulerAngles = CEuler(180, 0, 0); // 朝向 Z 轴正方向
     shipCamera.UpdateOrientationFromEuler();   // 同步四元数
+    shipCamera.origonPos = myShip.position;
+
 
     g_lastCamPos = globalCamera.position;
     g_lastCamEuler = globalCamera.GetEulerAngles();
@@ -334,4 +355,333 @@ void initCamera() {
     g_lastCamUp = globalCamera.GetUpDir();
     g_lastCamSpeed = globalCamera.moveSpeed;
     g_lastCamMode = globalCamera.currentMode;
+
+
+}
+
+void Camera::OptionInfo(const char* viewType) const {
+    if (!needGuide) {
+        return;
+    }
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    const int rightColumnX = viewport[2] - 360; // 右侧起始X坐标
+
+    //glColor3f(0.9f, 0.0f, 0.9f);
+    
+    GLint yPos = viewport[3] - 30;
+
+    char buffer[256];
+    if (strcmp(viewType, "Global") == 0) {
+        glColor3f(0.0f, 0.9f, 0.9f); // 青色区分右侧列
+        snprintf(buffer, sizeof(buffer), "-------------Option Guide-------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "View: %s Camera", viewType);
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'m'to hide/open this option guide");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Switch Camera-------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'o' to Astronaut Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'p' to ship Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Control Camera------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'c' to switch Euler/Local");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'t' to turn up Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'g' to turn down Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'f' to turn left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'h' to turn right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'r' to roll left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'y' to roll right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F2' to switch move camera/coltrol ship");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'w' to move up Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'s' to move down Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'a' to move left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'d' to move right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'q' to move forward Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'e' to move back Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Control Ship--------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F2' to switch control ship/move camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'w' to turn up Ship");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'s' to turn down Ship");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'a' to turn left Ship");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'d' to turn right Ship");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'q' to roll left Ship");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'e' to roll right Ship");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'u' to speed up");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'j' to speed down");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Select Planet-------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "mouse click to select planet");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "ENTER to start/end self-navigation");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'l' to go to the planet's surface");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Switch Draw Mode-----------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F1' switch draw mode");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+    }
+    else if (strcmp(viewType, "Astronaut") == 0) {
+        glColor3f(0.0f, 0.0f, 0.0f); // 青色区分右侧列
+        snprintf(buffer, sizeof(buffer), "-------------Option Guide-------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "View: %s Camera", viewType);
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'m'to hide/open this option guide");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Switch Camera-------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'i' to Global Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'p' to ship Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Control Camera------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'c' to switch Euler/Local");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'t' to turn up Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'g' to turn down Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'f' to turn left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'h' to turn right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'r' to roll left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'y' to roll right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F2' to switch move camera/astronaut");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'w' to move up Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'s' to move down Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'a' to move left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'d' to move right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'q' to move forward Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'e' to move back Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Control Astronaut---------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F2' to switch move astronaut/camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'w' to look up");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'s' to look down");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'a' to look left");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'d' to look right");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'q' to move forward");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'e' to move back");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Switch Draw Mode-----------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F1' switch draw mode");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+    }
+    else {
+        glColor3f(0.0f, 0.9f, 0.9f); 
+        snprintf(buffer, sizeof(buffer), "-------------Option Guide-------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "View: %s Camera", viewType);
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'m'to hide/open this option guide");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Switch Camera-------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'i' to Global Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'p' to ship Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Control Camera------------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'c' to switch Euler/Local");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'t' to turn up Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'g' to turn down Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'f' to turn left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'h' to turn right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'r' to roll left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'y' to roll right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F2' to switch move camera/astronaut");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'w' to move up Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'s' to move down Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'a' to move left Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'d' to move right Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'q' to move forward Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'e' to move back Camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Control Astronaut---------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F2' to switch move astronaut/camera");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'w' to look up");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'s' to look down");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'a' to look left");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'d' to look right");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'q' to move forward");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'e' to move back");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "Switch Draw Mode-----------------------");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+        snprintf(buffer, sizeof(buffer), "'F1' switch draw mode");
+        RenderString(rightColumnX, yPos, buffer);
+        yPos -= 20;
+    }
+
+    glPopMatrix();
 }
