@@ -17,7 +17,7 @@ bool specialKeyPressed[256] = { false };
 extern ship myShip;
 extern ball* selectedPlanet;
 extern bool g_wireframe;
-extern Camera globalCamera, astronautCamera,shipCamera;
+extern Camera globalCamera, astronautCamera,shipCamera,planetCamera;
 extern bool ControlingGlobal, ControllingShip, ControllingAstronaut,needGuide, ControllingShip_camera;
 
 // 普通按键按下回调
@@ -30,6 +30,7 @@ void keyboardDown(unsigned char key, int x, int y) {
         case KEY_RESET:
             initShip();
             astronautCamera.origonPos = myShip.position;
+            shipCamera.origonPos = myShip.position;
             break;
         case 13: // 回车键
             if (selectedPlanet) {
@@ -105,6 +106,10 @@ void keyboardDown(unsigned char key, int x, int y) {
             else if (astronautCamera.online)
                 astronautCamera.StartTransitionTo(shipCamera, time);
             break;
+        case 'l': // 'l'键
+            if (!globalCamera.online || myShip.targetBall == nullptr) { break; }
+                globalCamera.StartTransitionTo(planetCamera, time); 
+               break;
         case 'm':
             needGuide = !needGuide;
             break;
@@ -198,7 +203,7 @@ void checkKeyStates() {
 
     if (ControlingGlobal || shipCamera.online) {
         if (!ControllingShip && !shipCamera.online) {
-            {
+            {//控制全局相机
                 if (keyPressed[CAMERA_MOVEUP])    {globalCamera.moveSpeed = 0.04f; globalCamera.MoveUp(); }
                 if (keyPressed[CAMERA_MOVEDOWN])  {globalCamera.moveSpeed = 0.04f; globalCamera.MoveDown(); }
                 if (keyPressed[CAMERA_MOVELEFT])  {globalCamera.moveSpeed = 0.04f; globalCamera.MoveLeft();}
@@ -209,7 +214,7 @@ void checkKeyStates() {
         }
         else {
             //控制飞船
-            if ((!myShip.autoPilot||myShip.targetBall == nullptr)&&(!shipCamera.online|| shipCamera.online&&ControllingShip_camera)) {
+            if ((!myShip.autoPilot||myShip.targetBall == nullptr)&&(!shipCamera.online|| shipCamera.online && ControllingShip_camera)) {
                 // 方向控制
                 if (keyPressed[KEY_UP]) {
                     myShip.upDownAngle += myShip.angleStep; 
@@ -260,10 +265,10 @@ void checkKeyStates() {
         if (ControllingAstronaut) {
             //宇航员
             if (keyPressed[KEY_ROLL_LEFT]) { astronaut.position = astronaut.position + astronaut.direction * astronaut.speedLen;
-            astronautCamera.position = astronautCamera.position + astronaut.direction * astronaut.speedLen;
+            astronautCamera.origonPos = astronautCamera.origonPos + astronaut.direction * astronaut.speedLen;
             }
             if (keyPressed[KEY_ROLL_RIGHT]) { astronaut.position = astronaut.position - astronaut.direction * astronaut.speedLen; 
-            astronautCamera.position = astronautCamera.position - astronaut.direction * astronaut.speedLen;
+            astronautCamera.origonPos = astronautCamera.origonPos - astronaut.direction * astronaut.speedLen;
             }
 
             if (keyPressed[KEY_LEFT]) {

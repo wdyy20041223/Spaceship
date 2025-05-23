@@ -1,17 +1,39 @@
-﻿  camera.cpp
+﻿  ship.cpp
+C:\Users\HP\Desktop\Spaceship\global.h(2,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
+  (编译源文件“ship.cpp”)
+  
 C:\Users\HP\Desktop\Spaceship\planet.h(11,16): warning C4091: “typedef ”: 没有声明变量时忽略“ball”的左侧
-  (编译源文件“camera.cpp”)
+  (编译源文件“ship.cpp”)
   
 C:\Users\HP\Desktop\Spaceship\ship.h(7,16): warning C4091: “typedef ”: 没有声明变量时忽略“ship”的左侧
-  (编译源文件“camera.cpp”)
+  (编译源文件“ship.cpp”)
   
-C:\Users\HP\Desktop\Spaceship\camera.cpp(330,14): warning C4305: “=”: 从“double”到“float”截断
-  keyboard.cpp
-C:\Users\HP\Desktop\Spaceship\planet.h(11,16): warning C4091: “typedef ”: 没有声明变量时忽略“ball”的左侧
-  (编译源文件“keyboard.cpp”)
-  
-C:\Users\HP\Desktop\Spaceship\ship.h(7,16): warning C4091: “typedef ”: 没有声明变量时忽略“ship”的左侧
-  (编译源文件“keyboard.cpp”)
-  
-  正在生成代码...
+C:\Users\HP\Desktop\Spaceship\ship.cpp(11,24): warning C4305: “=”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(13,13): warning C4305: “初始化”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(14,28): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\ship.cpp(15,34): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\ship.cpp(36,35): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(41,25): warning C4305: “参数”: 从“double”到“GLfloat”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(41,20): warning C4305: “参数”: 从“double”到“GLfloat”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(41,15): warning C4305: “参数”: 从“double”到“GLfloat”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(64,25): warning C4305: “参数”: 从“double”到“GLfloat”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(64,20): warning C4305: “参数”: 从“double”到“GLfloat”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(64,15): warning C4305: “参数”: 从“double”到“GLfloat”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(77,35): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(78,47): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(78,39): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(78,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(93,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(94,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(94,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(100,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(101,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(101,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(122,15): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\ship.cpp(123,17): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\ship.cpp(149,23): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\ship.cpp(150,25): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\ship.cpp(199,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(213,35): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\ship.cpp(227,38): warning C4305: “参数”: 从“double”到“float”截断
   ConsoleApplication1.vcxproj -> C:\Users\HP\Desktop\Spaceship\run\ConsoleApplication1.exe

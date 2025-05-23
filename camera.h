@@ -40,7 +40,6 @@ public:
     bool online;
     CEuler allAngles;
 
-
     void RenderInfo(const char* viewType) const;
     void OptionInfo(const char* viewType) const;
     const char* GetControlModeString() const;

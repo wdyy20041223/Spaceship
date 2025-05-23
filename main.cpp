@@ -159,7 +159,7 @@ void myTimerFunc(int val) {
     //五帧刷新
     static int frameCount = 0;
     if (frameCount % 5 == 0) {
-        CheckCameraStateChange();
+        //CheckCameraStateChange();
         frameCount = 0; 
     }
     frameCount++;

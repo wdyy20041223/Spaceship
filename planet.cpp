@@ -16,6 +16,7 @@ bool g_wireframe = false;
 ball planet[PLANETNUM];//struct ball类型
 float radiusCorrection = 1.2, distanceCorrection = 1.1, rotationCorrection = 1.1;//一些参数的修正系数
 ball* selectedPlanet = nullptr; // 当前选中的行星
+extern Camera planetCamera;
 
 GLuint LoadTexture(const char* path) {
     int width, height, channels;
@@ -67,6 +68,13 @@ void drawPlanet() {
             glColor3f(1,1,1); // 线框
             glutWireSphere(planet[i].r * 1.15, 12, 12);
             glPopMatrix();
+
+            planetCamera.origonPos = planet[i].centerPlace + CVector(0, 1, 0) * planet[i].r * 1.2;       
+            CVector dir = -planetCamera.origonPos;
+            planetCamera.orientation = dir.ToEuler().ToQuaternion();
+            planetCamera.position = planetCamera.origonPos;
+
+
         }
     }
     drawRing(planet[6]);

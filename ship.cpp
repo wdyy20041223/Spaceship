@@ -17,6 +17,8 @@ void initShip() {
 }
 
 
+
+
 void drawShip() {
     glPushMatrix();
 
@@ -69,6 +71,14 @@ void drawShip() {
     gluDeleteQuadric(quadric);
     glPopMatrix();
     
+    //甲板
+    glColor3f(1.0, 0.5, 0.0);
+    glPushMatrix();
+    transMat1.SetTrans(CVector(0, -0.06, 0));
+    scaleMat1.SetScale(CVector(0.475, 0.0002, 1.3));
+    glMultMatrixf(transMat1 * scaleMat1);
+    glutSolidCube(1.0);
+    glPopMatrix();
 
     glColor3f(1.0, 0.5, 0.0);// 引擎喷口
     glPushMatrix();
@@ -92,6 +102,8 @@ void drawShip() {
     glMultMatrixf(transMat1 * scaleMat1);
     glutSolidCube(1.0);
     glPopMatrix();
+
+
 
     glPopMatrix();
 
@@ -148,6 +160,10 @@ void autoShip() {
             astronautCamera.orientation = deltaQ * astronautCamera.orientation;
             astronautCamera.orientation.Normalize();
             astronautCamera.UpdateEulerFromOrientation(); // 同步欧拉角
+
+            shipCamera.orientation = deltaQ * astronautCamera.orientation;
+            shipCamera.orientation.Normalize();
+            shipCamera.UpdateEulerFromOrientation(); // 同步欧拉角
             
 
             myShip.leftRightAngle = yaw;
