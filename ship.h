@@ -20,6 +20,8 @@ typedef struct ship {
 
     CVector lightPosition;   // 新增：聚光灯位置
     CVector lightDirection; // 新增：聚光灯方向
+
+    GLuint seatTexture;
 };
 
 void autoShip();
@@ -28,5 +30,5 @@ void shipMove();
 CVector getShipDir(ship myShip);
 void drawShip();
 void drawAxis();
-
+void drawSeat();
 #pragma once
