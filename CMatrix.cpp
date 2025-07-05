@@ -10,6 +10,7 @@
 #endif
 
 
+
 // 将矩阵转换为四元数
 CQuaternion CMatrix::ToQuaternion() const {
     float m00 = this->m00, m01 = this->m01, m02 = this->m02;
@@ -271,4 +272,9 @@ void CMatrix::output() {
             printf("\n");
         }
     }
+}
+
+// 新增const版本的转换运算符
+CMatrix::operator const float* () const {
+    return &m00;
 }

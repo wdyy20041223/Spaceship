@@ -63,6 +63,9 @@
     <ClCompile Include="111.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="AABB.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base.h">

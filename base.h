@@ -10,6 +10,7 @@
 #include "CVector.h" 
 #include "global.h"
 
+
 #define PI 3.1415926
 
 inline float random_float(float min, float max) {//随机浮点数
@@ -17,6 +18,8 @@ inline float random_float(float min, float max) {//随机浮点数
     std::uniform_real_distribution<float> dist(min, max);
     return dist(engine);
 }
+
+
 
 
 

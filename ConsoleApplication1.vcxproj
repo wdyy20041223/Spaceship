@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="111.cpp" />
+    <ClCompile Include="AABB.h" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="CEuler.cpp" />
     <ClCompile Include="keyboard.cpp" />

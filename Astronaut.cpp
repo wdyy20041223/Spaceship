@@ -12,6 +12,7 @@ extern Astronaut astronaut;
 extern ship myShip;
 extern Camera astronautCamera;
 extern bool ControlingGlobal;
+char a = 'a';
 
 void initAstronaut() {
     astronaut.angleStep = 1.8f;   // 默认转向角度增量
@@ -30,8 +31,11 @@ void initAstronaut() {
 }
 
 void drawAstronaut() {
+    // 清空之前的包围盒
+    astronaut.collisionBoxes.clear();
 
-    float a = 0.03;
+
+    float aa = 0.03;
 
     glPushMatrix();
 
@@ -44,7 +48,7 @@ void drawAstronaut() {
 
     transMat1.SetTrans(astronaut.position);
     rotateMat1.SetRotate(astronaut.allAngle.h, CVector(0, 1, 0));
-    scaleMat1.SetScale(CVector(0.2 * a, 0.2 * a, 0.2 * a));
+    scaleMat1.SetScale(CVector(0.2 * aa, 0.2 * aa, 0.2 * aa));
     finalMat = finalMat * transMat1 * rotateMat1 * scaleMat1;
 
     glMultMatrixf(finalMat);
@@ -56,8 +60,7 @@ void drawAstronaut() {
     // 替换原有 localRotMat 计算部分
     localDir = CVector(finalMat.m02, finalMat.m12, finalMat.m22); // 从变换矩阵中提取Z轴方向
     astronaut.finalDir = localDir.Normalized();
-    //astronaut.direction.output();
-    //astronaut.finalDir.output();
+
 
     astronaut.upDirection = CVector(
         finalMat.m01,  // Y轴X分量（第0行第1列）
@@ -105,6 +108,15 @@ void drawAstronaut() {
     glMultMatrixf(transMat1);
     glColor3f(1, 1, 1);
 
+    // 计算头部包围盒
+    AABB headBox;
+    headBox.partName = "Head";
+    headBox.min = CVector(-0.3, -0.3, -0.3); // 球体半径0.3
+    headBox.max = CVector(0.3, 0.3, 0.3);
+    headBox.worldTransform = finalMat * transMat1;
+    astronaut.collisionBoxes.push_back(headBox);
+    DrawAABB(headBox,a);
+
     // 启用球面映射纹理坐标
     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
     glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
@@ -123,6 +135,17 @@ void drawAstronaut() {
     transMat1.SetTrans(CVector(0, 1.4, 0));
     scaleMat1.SetScale(CVector(0.444, 1, 0.333));
     glMultMatrixf(transMat1 * scaleMat1);
+
+    // 计算身体包围盒
+    AABB bodyBox;
+    bodyBox.partName = "Body";
+    bodyBox.min = CVector(-0.5, -0.5, -0.5); // 立方体尺寸1.0
+    bodyBox.max = CVector(0.5, 0.5, 0.5);
+    bodyBox.worldTransform = finalMat * transMat1 * scaleMat1;
+    astronaut.collisionBoxes.push_back(bodyBox);
+
+    
+    DrawAABB(bodyBox,a);
 
     // 调整后的纹理生成平面参数
     GLfloat sPlane[] = { 1.0f, 0.0f, 0.0f, 0.0f };  // X轴方向，系数从2.25降为1.0
@@ -148,6 +171,15 @@ void drawAstronaut() {
     transMat1.SetTrans(CVector(0.4, 1.7, 0.0));
     rotateMat1.SetRotate(0, CVector(0.0, 1.0, 0.0));
     glMultMatrixf(transMat1* rotateMat1);
+
+    // 计算右臂包围盒
+    AABB rightArmBox;
+    rightArmBox.partName = "LeftArm";
+    rightArmBox.min = CVector(-0.1, -0.1, 0.0); // 圆锥底面半径0.1，高度0.8
+    rightArmBox.max = CVector(0.1, 0.1, 0.8);
+    rightArmBox.worldTransform = finalMat * transMat1 * rotateMat1;
+    astronaut.collisionBoxes.push_back(rightArmBox);  
+    DrawAABB(rightArmBox,a);
 
     // 添加法线计算（圆锥体需要特殊处理）
     GLUquadricObj* quadric = gluNewQuadric();
@@ -177,6 +209,17 @@ void drawAstronaut() {
     rotateMat1.SetRotate(0, CVector(0.0, 1.0, 0.0));
     glMultMatrixf(transMat1* rotateMat1);
 
+    // 计算左臂包围盒
+    AABB leftArmBox;
+    leftArmBox.partName = "RightArm";
+    leftArmBox.min = CVector(-0.1, -0.1, 0.0);
+    leftArmBox.max = CVector(0.1, 0.1, 0.8);
+    leftArmBox.worldTransform = finalMat * transMat1 * rotateMat1;
+    astronaut.collisionBoxes.push_back(leftArmBox);
+
+    
+    DrawAABB(leftArmBox,a);
+
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
     gluQuadricNormals(quadric, GLU_SMOOTH);
@@ -203,6 +246,17 @@ void drawAstronaut() {
     rotateMat1.SetRotate(90, CVector(1.0, 0.0, 0.0));
     rotateMat2.SetRotate(astronaut.rightLegAngle, CVector(1.0, 0.0, 0.0));
     glMultMatrixf(transMat1* rotateMat1* rotateMat2);
+
+    // 计算右腿包围盒
+    AABB rightLegBox;
+    rightLegBox.partName = "leftLeg";
+    rightLegBox.min = CVector(-0.15, -0.15, 0.0); // 圆锥底面半径0.15，高度1.0
+    rightLegBox.max = CVector(0.15, 0.15, 1.0);
+    rightLegBox.worldTransform = finalMat * transMat1 * rotateMat1 * rotateMat2;
+    astronaut.collisionBoxes.push_back(rightLegBox);
+
+    
+    DrawAABB(rightLegBox,a);
 
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
@@ -233,6 +287,17 @@ void drawAstronaut() {
     rotateMat2.SetRotate(astronaut.leftLegAngle, CVector(1.0, 0.0, 0.0));
     glMultMatrixf(transMat1* rotateMat1* rotateMat2);
 
+    // 计算左腿包围盒
+    AABB leftLegBox;
+    leftLegBox.partName = "RightLeg";
+    leftLegBox.min = CVector(-0.15, -0.15, 0.0);
+    leftLegBox.max = CVector(0.15, 0.15, 1.0);
+    leftLegBox.worldTransform = finalMat * transMat1 * rotateMat1 * rotateMat2;
+    astronaut.collisionBoxes.push_back(leftLegBox);
+
+    
+    DrawAABB(leftLegBox,a);
+
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
     gluQuadricNormals(quadric, GLU_SMOOTH);
@@ -256,4 +321,142 @@ void drawAstronaut() {
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHTING);  // 禁用光照（假设其他物体可能需要单独设置）
     glPopMatrix();
+
+    
+}
+
+void DrawAABB(const AABB& box ,char category) {
+    // 保存当前状态
+    glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT | GL_LINE_BIT);
+    glPushMatrix();
+    glScalef(1.001f, 1.001f, 1.001f);
+
+    // 禁用光照和纹理
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+
+    // 设置线框模式
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glLineWidth(2.0f);
+
+    // 根据部位名称设置不同颜色
+    if (category == 'a') glColor3f(1.0f, 0.0f, 0.0f); 
+    else if (category == 's') glColor3f(0.0f, 1.0f, 0.0f); 
+
+    // 绘制机翼几何体后，禁用纹理坐标生成
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_GEN_S);  // 新增
+    glDisable(GL_TEXTURE_GEN_T);  // 新增
+
+    // 绘制包围盒
+    glBegin(GL_QUADS);
+
+    // 前面
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+
+    // 后面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+
+    // 上面
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+
+    // 下面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+
+    // 左面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+
+    // 右面
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+
+    glEnd();
+
+    // 恢复状态
+    glPopMatrix();
+    glPopAttrib();
+}
+
+void DrawAABB2(const AABB& box, char category) {
+    glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT | GL_LINE_BIT);
+    glPushMatrix();
+
+    // 应用世界变换矩阵
+    glMultMatrixf(box.worldTransform);
+    glScalef(1.1f, 1.1f, 1.1f);
+
+    // 禁用光照和纹理
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+
+    // 设置线框模式
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glLineWidth(2.0f);
+
+    // 根据类别设置颜色
+    if (category == 'a')
+        glColor3f(1.0f, 1.0f, 0.0f); 
+    else if (category == 's')
+        glColor3f(0.0f, 0.0f, 1.0f); 
+
+    // 绘制包围盒
+    glBegin(GL_QUADS);
+    // 前面
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+
+    // 后面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+
+    // 上面
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+
+    // 下面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+
+    // 左面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+
+    // 右面
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+    glEnd();
+
+    // 恢复状态
+    glPopMatrix();
+    glPopAttrib();
 }

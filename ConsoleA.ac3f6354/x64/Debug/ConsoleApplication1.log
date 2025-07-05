@@ -1,14 +1,50 @@
-﻿  main.cpp
-C:\Users\HP\Desktop\Spaceship\global.h(2,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
-  (编译源文件“main.cpp”)
-  
+﻿  Astronaut.cpp
 C:\Users\HP\Desktop\Spaceship\planet.h(11,16): warning C4091: “typedef ”: 没有声明变量时忽略“ball”的左侧
-  (编译源文件“main.cpp”)
+  (编译源文件“Astronaut.cpp”)
   
-C:\Users\HP\Desktop\Spaceship\star.h(3,16): warning C4091: “typedef ”: 没有声明变量时忽略“star”的左侧
-  (编译源文件“main.cpp”)
-  
-C:\Users\HP\Desktop\Spaceship\main.cpp(40,79): warning C4305: “参数”: 从“double”到“float”截断
-C:\Users\HP\Desktop\Spaceship\main.cpp(47,64): warning C4305: “参数”: 从“double”到“float”截断
-C:\Users\HP\Desktop\Spaceship\main.cpp(171,15): warning C4305: “初始化”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(21,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(24,31): warning C4305: “=”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(38,14): warning C4305: “初始化”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(51,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(51,46): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(51,36): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(75,22): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(74,22): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(73,22): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(107,35): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(114,39): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(114,33): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(114,27): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(115,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(115,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(115,27): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(135,35): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(136,42): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(136,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(171,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(171,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(178,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(178,31): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(179,41): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(179,36): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(179,31): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(208,38): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(208,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(215,36): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(215,30): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(216,40): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(216,35): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(216,30): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(245,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(245,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(253,38): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(253,31): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(254,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(254,31): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(285,38): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(285,32): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(293,37): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(293,30): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(294,36): warning C4305: “参数”: 从“double”到“float”截断
+C:\Users\HP\Desktop\Spaceship\Astronaut.cpp(294,30): warning C4305: “参数”: 从“double”到“float”截断
   ConsoleApplication1.vcxproj -> C:\Users\HP\Desktop\Spaceship\run\ConsoleApplication1.exe

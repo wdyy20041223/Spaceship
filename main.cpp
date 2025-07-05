@@ -11,6 +11,8 @@
 #include <iostream>
 
 
+
+
 void SetRC();
 void myReshape(int w, int h);
 void CheckCameraStateChange();
@@ -21,6 +23,21 @@ extern Camera globalCamera,astronautCamera,tempCamera, shipCamera;  // 全局摄
 extern bool ControlingGlobal;
 extern CVector deltaLight;
 
+
+
+// 绘制所有包围盒的函数
+void DrawAllBoundingBoxes() {
+    // 绘制飞船所有部分的包围盒
+    for (const auto& box : myShip.collisionBoxes) {
+        DrawAABB2(box, 's');
+    }
+
+    // 绘制宇航员所有部分的包围盒
+    for (const auto& box : astronaut.collisionBoxes) {
+        DrawAABB2(box, 'a');
+    }
+
+}
 
 void myDisplay() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -82,6 +99,9 @@ void myDisplay() {
     drawAstronaut();
     drawAxis();
     drawStars();
+
+    DrawAllBoundingBoxes();
+
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -271,7 +291,7 @@ void init() {
     glLightfv(GL_LIGHT0, GL_POSITION, sun_position);
     // 更符合真实太阳光照比例
     GLfloat sun_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };  // 环境光保持较低
-    GLfloat sun_diffuse[] = { 0.7f,0.7f,0.7f, 1.0f };  // 增加亮度20%
+    GLfloat sun_diffuse[] = { 0.9f,0.9f,0.9f, 1.0f };  // 增加亮度20%
     GLfloat sun_specular[] = { 1.5f, 1.5f, 1.2f, 1.0f }; // 增强镜面高光
     glLightfv(GL_LIGHT0, GL_AMBIENT, sun_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, sun_diffuse);

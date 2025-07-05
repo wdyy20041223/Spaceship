@@ -8,6 +8,12 @@ class CVector;
 #include "planet.h"
 #include "CVector.h"
 #include "CQuaternion.h"
+#include <vector>         // 添加 vector 头文件
+#include <string>         // 添加 string 头文件
+
+#include "AABB.h"
+
+
 
 struct ship {
     CQuaternion orientation;
@@ -35,6 +41,8 @@ struct ship {
     GLuint panelTexture;   // 仪表板
     GLuint envMapTexture;  // 环境贴图
     GLuint floorTexture;
+
+    std::vector<AABB> collisionBoxes; // 存储包围盒信息
 };
 CVector getForwardDirection(const CQuaternion& orientation);
 CVector getUpDirection(const CQuaternion& orientation);
@@ -46,11 +54,13 @@ void shipMove();
 CVector getShipDir(ship myShip);
 void drawShip();
 void drawAxis();
-void drawSeat(float len, float pos1, float pos2);
+void drawSeat(float len, float pos1, float pos2, const CMatrix& shipTransform);
 
 void ShipYaw(float angle);
 void ShipPitch(float angle);
 void ShipRoll(float angle);
-void DrawWing(bool isRightWing);
+void DrawWing(bool isRightWing, const CMatrix& shipTransform);
+
+
 
 #pragma once

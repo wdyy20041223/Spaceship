@@ -31,6 +31,9 @@ public:
 	CEuler ToEuler() const;        // 转换为欧拉角
 	CQuaternion ToQuaternion() const; // 转换为四元数
 	void Orthogonalize();//正交化
+
+	operator const float* () const; // 新增const版本
+
 };
 
 
