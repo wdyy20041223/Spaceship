@@ -113,12 +113,12 @@ void Camera::MoveDown() {
 }
 
 void Camera::MoveLeft() {
-    origonPos = origonPos - GetRightDir() * speedLen;
+    origonPos = origonPos + GetRightDir() * speedLen;
 
 }
 
 void Camera::MoveRight() {
-    origonPos = origonPos + GetRightDir() * speedLen;
+    origonPos = origonPos - GetRightDir() * speedLen;
 
 }
 
@@ -158,12 +158,13 @@ void Camera::RotateYaw(float angleDelta) {
  * 本地模式：绕当前右方向轴旋转 */
 void Camera::RotatePitch(float angleDelta) {
     if (currentMode == EULER) {
-        eulerAngles.p += angleDelta * rotateSpeed;
+        eulerAngles.p -= angleDelta * rotateSpeed;
         eulerAngles.Normal();
         UpdateOrientationFromEuler();
     }
     else {
-        CVector right = GetRightDir();
+
+        CVector right = -GetRightDir();
         CQuaternion rot;
         rot.SetAngle(angleDelta * rotateSpeed, right);
         orientation = rot * orientation;
@@ -176,7 +177,7 @@ void Camera::RotatePitch(float angleDelta) {
  * 本地模式：绕当前前方向轴旋转 */
 void Camera::RotateRoll(float angleDelta) {
     if (currentMode == EULER) {
-        eulerAngles.b -= angleDelta * rotateSpeed;
+        eulerAngles.b += angleDelta * rotateSpeed;
         eulerAngles.Normal();
         UpdateOrientationFromEuler();
     }
@@ -199,7 +200,7 @@ CEuler Camera::GetEulerAngles() const {
  * 从旋转矩阵的第三列（z轴方向）提取 */
 CVector Camera::GetForwardDir() const {//初始（-1,-1,-1）
     CMatrix mat = orientation.ToMatrix();
-    return CVector(-mat.m02, -mat.m12, -mat.m22).Normalized();
+    return CVector(mat.m02, mat.m12, mat.m22).Normalized();
 }
 
 /* 获取上方向向量
@@ -335,27 +336,40 @@ void initCamera() {
     shipCamera.transition.isActive = false;
 
     CEuler temp;
-    temp.h = 45;
-    temp.p = -35.264;
-    temp.b = 0;
-    temp.b = 0;
+    temp.h = 45.0f;       // 航向角（绕Y轴45°）
+    temp.p = -35.264f;    // 俯仰角（绕X轴-35.264°，向下看）
+    temp.b = 0.0f;        // 横滚角
     globalCamera.eulerAngles = temp;
+    CQuaternion temp3;   
     globalCamera.UpdateOrientationFromEuler();
+    temp3.SetAngle(180, CVector(0, 1, 0));
+    globalCamera.orientation = globalCamera.orientation * temp3;
+    globalCamera.UpdateEulerFromOrientation();
     globalCamera.SwitchControlMode(Camera::LOCAL);
 
     globalCamera.speedLen = 0.04f;
     astronautCamera.speedLen = 0.001f;
-    shipCamera.speedLen = 0.001f;
+    shipCamera.speedLen = 0.01f;
 
-    astronautCamera.SwitchControlMode(Camera::EULER);
-    astronautCamera.eulerAngles = CEuler(180, 0, 0); // 朝向 Z 轴正方向
-    astronautCamera.UpdateOrientationFromEuler();   // 同步四元数
+    astronautCamera.SwitchControlMode(Camera::LOCAL);
     astronautCamera.origonPos = myShip.position;
 
-    shipCamera.SwitchControlMode(Camera::EULER);
-    shipCamera.eulerAngles = CEuler(180, 0, 0); // 朝向 Z 轴正方向
-    shipCamera.UpdateOrientationFromEuler();   // 同步四元数
+    shipCamera.SwitchControlMode(Camera::LOCAL);
     shipCamera.origonPos = myShip.position;
+
+    // 确保初始朝向正确
+    myShip.orientation = CQuaternion(); // 初始化为单位四元数
+    CQuaternion temp2;
+    temp2.SetAngle(0, CVector(0, 1, 0));
+
+    // 同步相机初始方向（注意乘法顺序）
+    astronautCamera.orientation = myShip.orientation;
+    astronautCamera.Update();
+    astronautCamera.orientation = temp2 * myShip.orientation;
+    astronautCamera.Update();
+    shipCamera.orientation =  myShip.orientation;
+    shipCamera.Update();
+
 
 
     g_lastCamPos = globalCamera.position;
@@ -387,7 +401,7 @@ void Camera::OptionInfo(const char* viewType) const {
     char buffer[256];
     if (strcmp(viewType, "Global") == 0) {
         glColor3f(0.0f, 0.9f, 0.9f); // 青色区分右侧列
-        snprintf(buffer, sizeof(buffer), "-------------Option Guide-------------");
+        snprintf(buffer, sizeof(buffer), "------------Operation Guide-----------");
         RenderString(rightColumnX, yPos, buffer);
         yPos -= 20;
         snprintf(buffer, sizeof(buffer), "View: %s Camera", viewType);
@@ -500,8 +514,9 @@ void Camera::OptionInfo(const char* viewType) const {
         yPos -= 20;
     }
     else if (strcmp(viewType, "Astronaut") == 0) {
-        glColor3f(0.0f, 0.0f, 0.0f); // 青色区分右侧列
-        snprintf(buffer, sizeof(buffer), "-------------Option Guide-------------");
+        glColor3f(0.0f, 0.9f, 0.9f);// 青色区分右侧列
+        //glColor3f(0.0f, 0.0f, 0.0f); 
+        snprintf(buffer, sizeof(buffer), "------------Operation Guide-----------");
         RenderString(rightColumnX, yPos, buffer);
         yPos -= 20;
         snprintf(buffer, sizeof(buffer), "View: %s Camera", viewType);
@@ -597,7 +612,7 @@ void Camera::OptionInfo(const char* viewType) const {
     }
     else {
         glColor3f(0.0f, 0.9f, 0.9f); 
-        snprintf(buffer, sizeof(buffer), "-------------Option Guide-------------");
+        snprintf(buffer, sizeof(buffer), "------------Operation Guide-----------");
         RenderString(rightColumnX, yPos, buffer);
         yPos -= 20;
         snprintf(buffer, sizeof(buffer), "View: %s Camera", viewType);

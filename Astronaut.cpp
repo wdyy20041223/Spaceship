@@ -19,6 +19,7 @@ void initAstronaut() {
     astronaut.leftRightAngle = 0.0f; // 初始朝向角度
     astronaut.position = CVector(0, -0.01, 0); // 初始位置（Y=1模拟地面高度）
     astronaut.direction = CVector(0, 0, 1);
+    astronaut.finalDir = CVector(0, 0, 1);
     astronaut.cameraDistLen = 0.3;
     ControlingGlobal = true;
 
@@ -34,14 +35,13 @@ void drawAstronaut() {
 
     glPushMatrix();
 
-    // 飞船基础变换（位置 + 旋转）
+    // 1. 获取飞船的变换矩阵（基于四元数）
     transMat1.SetTrans(myShip.position);
-    rotateMat1.SetRotate(myShip.leftRightAngle, CVector(0, 1, 0));
-    rotateMat2.SetRotate(-myShip.upDownAngle, CVector(1, 0, 0));
-    CMatrix rotateMat3;
-    rotateMat3.SetRotate(myShip.rollAngle, CVector(0, 0, 1));
+    CMatrix shipRotMat = myShip.orientation.ToMatrix(); // 从四元数生成旋转矩阵
 
-    finalMat = transMat1 * rotateMat1 * rotateMat2 * rotateMat3;
+    // 组合飞船的平移和旋转
+    finalMat = transMat1 * shipRotMat; // 顺序：先平移，再旋转
+
     transMat1.SetTrans(astronaut.position);
     rotateMat1.SetRotate(astronaut.allAngle.h, CVector(0, 1, 0));
     scaleMat1.SetScale(CVector(0.2 * a, 0.2 * a, 0.2 * a));
@@ -53,6 +53,11 @@ void drawAstronaut() {
     localRotMat.SetRotate(astronaut.allAngle.h, CVector(0, 1, 0));
     CVector localDir = localRotMat.vecMul(CVector(0, 0, 1)); // 初始前方向为Z轴
     astronaut.direction = localDir.Normalized();
+    // 替换原有 localRotMat 计算部分
+    localDir = CVector(finalMat.m02, finalMat.m12, finalMat.m22); // 从变换矩阵中提取Z轴方向
+    astronaut.finalDir = localDir.Normalized();
+    //astronaut.direction.output();
+    //astronaut.finalDir.output();
 
     astronaut.upDirection = CVector(
         finalMat.m01,  // Y轴X分量（第0行第1列）
@@ -72,6 +77,23 @@ void drawAstronaut() {
     CVector blue(0.0f, 0.0f, 1.0f);    // RGB蓝
     CVector red(1.0f, 0.0f, 0.0f);     // RGB红
     CVector green(0.0f, 1.0f, 0.0f);   // RGB绿
+    // ================== 设置太空人材质属性 ==================
+    GLfloat mat_ambient[] = { 0.4f, 0.4f, 0.4f, 1.0f };
+    GLfloat mat_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    GLfloat mat_specular[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+    GLfloat mat_shininess = 30.0f;
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialf(GL_FRONT, GL_SHININESS, mat_shininess);
+
+    // 启用光照计算
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT2);  // 只考虑L2和L3光源
+    glEnable(GL_LIGHT3);
+    glEnable(GL_NORMALIZE);  // 自动归一化法线
+
     // ================== 启用纹理 ==================
     glEnable(GL_TEXTURE_2D);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -122,11 +144,15 @@ void drawAstronaut() {
     // ================== 右臂（圆锥体）==================
     glBindTexture(GL_TEXTURE_2D, astronaut.armTexture);
     glPushMatrix();
-    glColor3f(1,1,1);
+    glColor3f(1, 1, 1);
     transMat1.SetTrans(CVector(0.4, 1.7, 0.0));
     rotateMat1.SetRotate(0, CVector(0.0, 1.0, 0.0));
-    glMultMatrixf(transMat1 * rotateMat1);
+    glMultMatrixf(transMat1* rotateMat1);
 
+    // 添加法线计算（圆锥体需要特殊处理）
+    GLUquadricObj* quadric = gluNewQuadric();
+    gluQuadricTexture(quadric, GL_TRUE);
+    gluQuadricNormals(quadric, GLU_SMOOTH);  // 自动生成法线
 
     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
     glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
@@ -134,8 +160,12 @@ void drawAstronaut() {
     glEnable(GL_TEXTURE_GEN_T);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glutSolidCone(0.1, 0.8, 16, 8);
 
+    // 修复：绘制圆锥体（带底面）
+    gluCylinder(quadric, 0.1, 0.0, 0.8, 16, 8);  // 圆锥侧面
+    gluDisk(quadric, 0.0, 0.1, 16, 1);           // 添加底面圆盘
+
+    gluDeleteQuadric(quadric);
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
     glPopMatrix();
@@ -145,15 +175,22 @@ void drawAstronaut() {
     glColor3f(1, 1, 1); // 设置颜色为白色
     transMat1.SetTrans(CVector(-0.4, 1.7, 0.0));
     rotateMat1.SetRotate(0, CVector(0.0, 1.0, 0.0));
-    glMultMatrixf(transMat1 * rotateMat1);
+    glMultMatrixf(transMat1* rotateMat1);
+
+    quadric = gluNewQuadric();
+    gluQuadricTexture(quadric, GL_TRUE);
+    gluQuadricNormals(quadric, GLU_SMOOTH);
 
     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
     glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
     glEnable(GL_TEXTURE_GEN_S);
     glEnable(GL_TEXTURE_GEN_T);
 
-    glutSolidCone(0.1, 0.8, 16, 8);
+    // 修复：绘制圆锥体（带底面）
+    gluCylinder(quadric, 0.1, 0.0, 0.8, 16, 8);  // 圆锥侧面
+    gluDisk(quadric, 0.0, 0.1, 16, 1);           // 添加底面圆盘
 
+    gluDeleteQuadric(quadric);
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
     glPopMatrix();
@@ -165,7 +202,11 @@ void drawAstronaut() {
     transMat1.SetTrans(CVector(0.2, 0.8, 0.0));
     rotateMat1.SetRotate(90, CVector(1.0, 0.0, 0.0));
     rotateMat2.SetRotate(astronaut.rightLegAngle, CVector(1.0, 0.0, 0.0));
-    glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
+    glMultMatrixf(transMat1* rotateMat1* rotateMat2);
+
+    quadric = gluNewQuadric();
+    gluQuadricTexture(quadric, GL_TRUE);
+    gluQuadricNormals(quadric, GLU_SMOOTH);
 
     // 启用纹理坐标生成
     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
@@ -174,8 +215,12 @@ void drawAstronaut() {
     glEnable(GL_TEXTURE_GEN_T);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glutSolidCone(0.15, 1.0, 16, 8);
 
+    // 修复：绘制圆锥体（带底面）
+    gluCylinder(quadric, 0.15, 0.0, 1.0, 16, 8);  // 圆锥侧面
+    gluDisk(quadric, 0.0, 0.15, 16, 1);           // 添加底面圆盘
+
+    gluDeleteQuadric(quadric);
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
     glPopMatrix();
@@ -186,7 +231,11 @@ void drawAstronaut() {
     transMat1.SetTrans(CVector(-0.2, 0.8, 0.0));
     rotateMat1.SetRotate(90, CVector(1.0, 0.0, 0.0));
     rotateMat2.SetRotate(astronaut.leftLegAngle, CVector(1.0, 0.0, 0.0));
-    glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
+    glMultMatrixf(transMat1* rotateMat1* rotateMat2);
+
+    quadric = gluNewQuadric();
+    gluQuadricTexture(quadric, GL_TRUE);
+    gluQuadricNormals(quadric, GLU_SMOOTH);
 
     // 启用纹理坐标生成
     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
@@ -194,13 +243,17 @@ void drawAstronaut() {
     glEnable(GL_TEXTURE_GEN_S);
     glEnable(GL_TEXTURE_GEN_T);
 
-    glutSolidCone(0.15, 1.0, 16, 8);
+    // 修复：绘制圆锥体（带底面）
+    gluCylinder(quadric, 0.15, 0.0, 1.0, 16, 8);  // 圆锥侧面
+    gluDisk(quadric, 0.0, 0.15, 16, 1);           // 添加底面圆盘
 
+    gluDeleteQuadric(quadric);
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
     glPopMatrix();
 
     // ================== 清理状态 ==================
     glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);  // 禁用光照（假设其他物体可能需要单独设置）
     glPopMatrix();
 }

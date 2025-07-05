@@ -31,6 +31,8 @@ public:
 
     CVector position;         // 世界空间中的位置坐标
     CVector origonPos;
+    CVector deltaPos;
+
     CQuaternion orientation; // 四元数表示的朝向
     CEuler eulerAngles;       // 欧拉角表示的旋转（弧度制）
     ControlMode currentMode;  // 当前控制模式

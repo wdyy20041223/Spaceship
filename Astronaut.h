@@ -4,6 +4,9 @@
 #include <GL/glew.h>      // OpenGLÀ©Õ¹
 
 struct Astronaut {
+    CQuaternion localRotation;
+
+    CVector finalDir;
     CVector position;
     CVector speed;
     CVector direction;

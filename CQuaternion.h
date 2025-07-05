@@ -25,6 +25,7 @@ public:
     CQuaternion operator+(const CQuaternion& p) const;
     CQuaternion operator-(const CQuaternion& p) const;
     CQuaternion operator*(float data) const;
+    CVector operator*(const CVector& v) const;
     friend CQuaternion operator*(float scalar, const CQuaternion& q);
     CQuaternion operator*(const CQuaternion& p) const;
     operator float* () { return &w; }
@@ -40,6 +41,8 @@ public:
     CMatrix ToMatrix() const; // ×ª»»ÎªÐý×ª¾ØÕó
     
     void output();
+
+    CQuaternion CreateReverseQuaternion();
 };
 
 #endif // CQUATERNION_H

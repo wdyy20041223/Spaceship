@@ -17,3 +17,4 @@ CVector g_lastCamUp;
 float g_lastCamSpeed = 0;
 Camera::ControlMode g_lastCamMode = Camera::EULER;
 bool needGuide = true;
+CVector deltaLight;

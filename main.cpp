@@ -19,6 +19,7 @@ void init();
 
 extern Camera globalCamera,astronautCamera,tempCamera, shipCamera;  // 全局摄像机对象
 extern bool ControlingGlobal;
+extern CVector deltaLight;
 
 
 void myDisplay() {
@@ -36,11 +37,10 @@ void myDisplay() {
     globalCamera.position = globalCamera.origonPos;
     // 太空人视角
     astronautForward = astronautCamera.GetForwardDir().Normalized();
-    astronautCamera.position = astronautCamera.origonPos - astronautForward * 0.025;
+    astronautCamera.position = astronautCamera.origonPos - astronautForward * 0.025 + astronautCamera.deltaPos;
     astronautPos = astronautCamera.position;
     astronautUp = astronautCamera.GetUpDir();
     astronautTarget = astronautPos + astronautForward;
-    //astronautCamera.position = astronautPos;
     astronautCamera.moveSpeed = myShip.speedLen;
     // 飞船视角
     shipForward = shipCamera.GetForwardDir().Normalized();
@@ -118,10 +118,44 @@ void myDisplay() {
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_DEPTH_TEST);
+
+    CVector cabinCenter = myShip.position + myShip.orientation * CVector(0, 0.041f, -0.1f); // 驾驶舱中心偏移量
+   // CVector cabinCenter = myShip.position + myShip.orientation * CVector(0, 0.041f, -0.1f); // 驾驶舱中心偏移量
+    GLfloat lightPos21[] = { cabinCenter.x, cabinCenter.y, cabinCenter.z, 1.0f };
+
+    CVector panelPos = myShip.position + myShip.orientation * CVector(0, 0.0025f, 0.077f); // 控制面板位置偏移
+    CVector panelDir = myShip.orientation * CVector(0, -0.3f, 1.0f).Normalized(); // 照射方向
+
+    GLfloat lightPos3[] = { panelPos.x, panelPos.y, panelPos.z, 1.0f };
+    GLfloat spotDir3[] = { panelDir.x, panelDir.y, panelDir.z };
+
+    glEnable(GL_DEPTH_TEST);
+    // 绘制顶灯标记
+    glPushMatrix();
+    glTranslatef(lightPos21[0], lightPos21[1], lightPos21[2]);
+    glColor3f(1, 1, 0);
+    glutWireSphere(0.005, 16, 16);
+    glPopMatrix();
+
+    // 绘制仪表盘灯标记
+    glPushMatrix();
+    glTranslatef(lightPos3[0], lightPos3[1], lightPos3[2]);
+    glColor3f(0, 1, 1);
+    glutWireSphere(0.002, 16, 16);
+    glPopMatrix();
+
+    glPopAttrib();
+
     glutSwapBuffers();
 }
 
 void myTimerFunc(int val) {
+    checkKeyStates();
+
     float deltaTime = 33.0f / 1000.0f; // 33ms per frame
 
     //更新相机过渡状态
@@ -133,12 +167,6 @@ void myTimerFunc(int val) {
     GLfloat light_pos[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
 
-    CVector tempPos = CVector(1.0, 0, 1.0);
-    GLfloat lightPos[] = { tempPos.x, tempPos.y,
-                        tempPos.z, 1.0f };
-    glLightfv(GL_LIGHT1, GL_POSITION, lightPos);
-
-
     // 更新聚光灯参数
     float len = 0.1;
     GLfloat lightPos2[] = {(myShip.position + myShip.direction * len).x, (myShip.position + myShip.direction * len).y,
@@ -147,13 +175,26 @@ void myTimerFunc(int val) {
     glLightfv(GL_LIGHT1, GL_POSITION, lightPos2);
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spotDir2);
 
+    CVector cabinCenter = myShip.position + myShip.orientation * CVector(0, 0.041f, -0.1f) - deltaLight; // 驾驶舱中心偏移量
+    GLfloat lightPos21[] = { cabinCenter.x, cabinCenter.y, cabinCenter.z, 1.0f };
 
-    checkKeyStates();
+    CVector panelPos = myShip.position + myShip.orientation * CVector(0, 0.0025f, 0.077f); // 控制面板位置偏移
+    CVector panelDir = myShip.orientation * CVector(0, -0.3f, 1.0f).Normalized(); // 照射方向
+
+    GLfloat lightPos3[] = { panelPos.x, panelPos.y, panelPos.z, 1.0f };
+    GLfloat spotDir3[] = { panelDir.x, panelDir.y, panelDir.z };
+
+    glLightfv(GL_LIGHT2, GL_POSITION, lightPos21);
+    glLightfv(GL_LIGHT3, GL_POSITION, lightPos3);
+    glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, spotDir3);
+
+    
 
     autoShip();
     shipMove();
     planetRotation();
     myDisplay();
+    
     checkStar();
 
     //五帧刷新
@@ -208,9 +249,10 @@ int main(int argc, char* argv[]) {
 }
 
 void init() {
-    myShip.direction = CVector(0, 1, 0);
+    //myShip.direction = CVector(0, 1, 0);
+    // 
     // 添加全局环境光设置
-    GLfloat global_ambient[] = { 0.2f,0.2f,0.2f, 1.0f };  // 原为0.6
+    GLfloat global_ambient[] = { 0.5f,0.5f,0.5f, 1.0f };  // 原为0.6
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
     // 启用双面光照
@@ -229,43 +271,61 @@ void init() {
     glLightfv(GL_LIGHT0, GL_POSITION, sun_position);
     // 更符合真实太阳光照比例
     GLfloat sun_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };  // 环境光保持较低
-    GLfloat sun_diffuse[] = { 1,1,1.0f, 1.0f };  // 增加亮度20%
+    GLfloat sun_diffuse[] = { 0.7f,0.7f,0.7f, 1.0f };  // 增加亮度20%
     GLfloat sun_specular[] = { 1.5f, 1.5f, 1.2f, 1.0f }; // 增强镜面高光
-
     glLightfv(GL_LIGHT0, GL_AMBIENT, sun_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, sun_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, sun_specular);
 
     glEnable(GL_LIGHT1);
-
-    // 聚光灯参数配置
     GLfloat light_diffuse2[] = { 1,1,1.0f, 1.0f }; // 降低20%亮度
     GLfloat light_ambient2[] = { 0.2f, 0.2f, 0.2f, 1.0f };  // 弱环境光
     GLfloat light_specular2[] = { 0.8f, 0.8f, 0.8f, 1.0f }; // 适量镜面反射
-
-    // 衰减系数（根据飞船尺寸调整）
     GLfloat att_constant = 1.0f;  // 基础衰减
     GLfloat att_linear = 0.15f;   // 线性衰减系数
     GLfloat att_quadratic = 0.03f;// 二次衰减系数
-
-    // 聚光特性
-    GLfloat spot_cutoff = 45.0f;  // 截止角度
-    GLfloat spot_exponent = 10.0f; // 光锥集中度
-
-    // 设置基础光照参数
+    GLfloat spot_cutoff = 45.0f; 
+    GLfloat spot_exponent = 10.0f;
     glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse2);
     glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient2);
     glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular2);
-
-    // 配置衰减系数（重要！）
     glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, att_constant);
     glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, att_linear);
     glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, att_quadratic);
-
-    // 聚光灯特性设置
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, spot_cutoff);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, spot_exponent);
     
+    // 飞船内部顶灯（light2） - 主照明
+    glEnable(GL_LIGHT2);
+    GLfloat light2_ambient[] = { 1, 1, 1, 1.0f };   // 亮黄环境光
+    GLfloat light2_diffuse[] = { 1.0f, 1.0f, 1, 1.0f };   // 亮黄漫反射
+    GLfloat light2_specular[] = { 1.0f, 1.0f, 1, 1.0f };  // 亮黄镜面反射
+    glLightfv(GL_LIGHT2, GL_AMBIENT, light2_ambient);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, light2_diffuse);
+    glLightfv(GL_LIGHT2, GL_SPECULAR, light2_specular);
+
+    // 衰减系数（短距离衰减）
+    glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0.9f);
+    glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, 0.9f);
+    glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, 23.9f);
+
+    // 飞船内部仪表盘辅助光（light3） - 较弱的点光源
+    glEnable(GL_LIGHT3);
+
+    // 减弱光源强度（冷色调）
+    GLfloat light3_ambient[] = { 0.15f, 0.15f, 0.8f, 1.0f };  // 亮蓝环境光
+    GLfloat light3_diffuse[] = { 0.25f, 0.25f, 1.0f, 1.0f };  // 鲜明亮蓝漫反射
+    GLfloat light3_specular[] = { 0.4f, 0.4f, 1.0f, 1.0f };   // 明亮蓝镜面反射
+
+    glLightfv(GL_LIGHT3, GL_AMBIENT, light3_ambient);
+    glLightfv(GL_LIGHT3, GL_DIFFUSE, light3_diffuse);
+    glLightfv(GL_LIGHT3, GL_SPECULAR, light3_specular);
+
+    // 点光源特性（无方向性）
+    glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 180.0f); // 180度表示全向光源
+    glLightf(GL_LIGHT3, GL_CONSTANT_ATTENUATION, 1.9f);
+    glLightf(GL_LIGHT3, GL_LINEAR_ATTENUATION, 1.9f);
+    glLightf(GL_LIGHT3, GL_QUADRATIC_ATTENUATION, 13.9f);
 }
 
 void myReshape(int w, int h) {
@@ -340,3 +400,4 @@ void CheckCameraStateChange() {
         std::cout << "Mode:     " << (g_lastCamMode == Camera::EULER ? "Euler" : "Local") << "\n\n";
     }
 }
+

@@ -71,7 +71,7 @@ void drawPlanet() {
 
             planetCamera.origonPos = planet[i].centerPlace + CVector(0, 1, 0) * planet[i].r * 1.2;       
             CVector dir = -planetCamera.origonPos;
-            planetCamera.orientation = dir.ToEuler().ToQuaternion();
+            planetCamera.orientation = (-dir).ToEuler().ToQuaternion();
             planetCamera.position = planetCamera.origonPos;
 
 
@@ -332,10 +332,6 @@ void drawBall(ball ball0) {
     rotateMat1.SetRotate(33.5, CVector(0, 0, 1));
     rotateMat2.SetRotate(ball0.rotationAngle, CVector(0, 1, 0));
     glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
-
-
-    // 设置材质颜色（无纹理时使用）
-    //glColor3fv(ball0.color);
 
     // 启用纹理和设置
     glEnable(GL_TEXTURE_2D);

@@ -243,3 +243,15 @@ void CQuaternion::Slerp(const CQuaternion& Vend, int n, float* t, CQuaternion* R
 void CQuaternion::output() {
     printf("%f %f %f %f\n", this->w, this->x, this->y, this->z);
 }
+
+CVector CQuaternion::operator*(const CVector& v) const {
+    // 将向量转换为纯四元数 (w=0)
+    CQuaternion vecQuat(0, v.x, v.y, v.z);
+
+    // 计算旋转后的四元数: q * v * q^-1
+    CQuaternion result = (*this) * vecQuat * this->GetInverse();
+
+    // 返回旋转后的向量部分
+    return CVector(result.x, result.y, result.z);
+}
+
