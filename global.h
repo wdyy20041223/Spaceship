@@ -21,3 +21,5 @@ extern Camera::ControlMode g_lastCamMode;
 extern bool needGuide , ControllingShip_camera;
 extern CVector deltaLight;
 
+
+

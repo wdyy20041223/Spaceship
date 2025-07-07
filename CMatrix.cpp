@@ -278,3 +278,4 @@ void CMatrix::output() {
 CMatrix::operator const float* () const {
     return &m00;
 }
+

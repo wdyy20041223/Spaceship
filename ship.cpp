@@ -128,7 +128,7 @@ void drawSeat(float len, float pos1, float pos2, const CMatrix& shipTransform) {
         glMultMatrixf(seatTransform);
 
         // 座垫部分
-        scaleMat1.SetScale(CVector(0.5f, 0.1f, 0.2f));
+        scaleMat1.SetScale(CVector(0.499f, 0.1f, 0.2f));
         glPushMatrix();
         glMultMatrixf(scaleMat1);
 
@@ -138,43 +138,55 @@ void drawSeat(float len, float pos1, float pos2, const CMatrix& shipTransform) {
         cushionBox.max = CVector(0.5f, 0.5f, 0.5f);
         cushionBox.worldTransform = shipTransform * seatTransform * scaleMat1;
         myShip.collisionBoxes.push_back(cushionBox);
-        DrawAABB(cushionBox, s);
 
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, myShip.seatTexture);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        // 设置纹理参数防止拉伸
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // 动态计算纹理重复比例
+        float texRepeatX = len * 2.0f; // 根据座位长度动态调整X方向重复次数
 
         glBegin(GL_QUADS);
+        // 前表面
         glNormal3f(0.0f, 0.0f, 1.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(0.5f, 0.5f, 0.5f);
+        glTexCoord2f(texRepeatX, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+        glTexCoord2f(texRepeatX, 1.0f); glVertex3f(0.5f, 0.5f, 0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
 
+        // 后表面
         glNormal3f(0.0f, 0.0f, -1.0f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(0.5f, 0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
-
-        glNormal3f(0.0f, 1.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, 0.5f, 0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+        glTexCoord2f(texRepeatX, 1.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+        glTexCoord2f(texRepeatX, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
 
+        // 上表面
+        glNormal3f(0.0f, 1.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
+        glTexCoord2f(texRepeatX, 1.0f); glVertex3f(0.5f, 0.5f, 0.5f);
+        glTexCoord2f(texRepeatX, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+
+        // 下表面
         glNormal3f(0.0f, -1.0f, 0.0f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(0.5f, -0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+        glTexCoord2f(texRepeatX, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+        glTexCoord2f(texRepeatX, 1.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
 
+        // 左表面
         glNormal3f(-1.0f, 0.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
 
+        // 右表面
         glNormal3f(1.0f, 0.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
@@ -197,11 +209,14 @@ void drawSeat(float len, float pos1, float pos2, const CMatrix& shipTransform) {
         backrestBox.max = CVector(0.5f, 0.5f, 0.5f);
         backrestBox.worldTransform = shipTransform * seatTransform * transMat1 * rotateMat1 * scaleMat1;
         myShip.collisionBoxes.push_back(backrestBox);
-        DrawAABB(backrestBox, s);
 
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, myShip.seatTexture);
-        glColor3f(1.0f, 1.0f, 1.0f);
+        // 靠背纹理参数
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        float backrestTexRepeatX = len * 1.5f; // 靠背纹理X方向重复系数
 
         GLfloat back_mat_ambient[] = { 0.4f, 0.4f, 0.4f, 1.0f };
         GLfloat back_mat_specular[] = { 0.6f, 0.6f, 0.6f, 1.0f };
@@ -209,36 +224,42 @@ void drawSeat(float len, float pos1, float pos2, const CMatrix& shipTransform) {
         glMaterialfv(GL_FRONT, GL_SPECULAR, back_mat_specular);
 
         glBegin(GL_QUADS);
+        // 前表面
         glNormal3f(0.0f, 0.0f, 1.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(0.5f, 0.5f, 0.5f);
+        glTexCoord2f(backrestTexRepeatX, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+        glTexCoord2f(backrestTexRepeatX, 1.0f); glVertex3f(0.5f, 0.5f, 0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
 
+        // 后表面
         glNormal3f(0.0f, 0.0f, -1.0f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(0.5f, 0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
-
-        glNormal3f(0.0f, 1.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, 0.5f, 0.5f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+        glTexCoord2f(backrestTexRepeatX, 1.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+        glTexCoord2f(backrestTexRepeatX, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
 
+        // 上表面
+        glNormal3f(0.0f, 1.0f, 0.0f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
+        glTexCoord2f(backrestTexRepeatX, 1.0f); glVertex3f(0.5f, 0.5f, 0.5f);
+        glTexCoord2f(backrestTexRepeatX, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+
+        // 下表面
         glNormal3f(0.0f, -1.0f, 0.0f);
-        glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
-        glTexCoord2f(0.0f, 1.0f); glVertex3f(0.5f, -0.5f, -0.5f);
-        glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
-        glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+        glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+        glTexCoord2f(backrestTexRepeatX, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+        glTexCoord2f(backrestTexRepeatX, 1.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+        glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
 
+        // 左表面
         glNormal3f(-1.0f, 0.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
         glTexCoord2f(1.0f, 1.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
         glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
 
+        // 右表面
         glNormal3f(1.0f, 0.0f, 0.0f);
         glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
         glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
@@ -260,14 +281,16 @@ void initShip() {
     myShip.speedStep = 0.002 * a * test;
     myShip.autoPilot = false;
 
-    myShip.seatTexture = LoadTexture("textures/seat.jpg");
-    myShip.bodyTexture = LoadTexture("textures/ship_body.jpg");
-    myShip.engineTexture = LoadTexture("textures/ship_body.jpg");
-    myShip.wingTexture = LoadTexture("textures/ship_body.jpg");
+    myShip.seatTexture = LoadTexture("textures/ship_seat.png");
+    myShip.bodyTexture = LoadTexture("textures/ship_body.png");
+    myShip.engineTexture = LoadTexture("textures/ship_engine.png");
+    myShip.wingTexture = LoadTexture("textures/ship_body.png");
     myShip.glassTexture = LoadTexture("textures/ship_body.jpg");
-    myShip.panelTexture = LoadTexture("textures/ship_body.jpg");
-    myShip.envMapTexture = LoadTexture("textures/ship_body.jpg");
-    myShip.floorTexture = LoadTexture("textures/ship_body.jpg");
+    myShip.floorTexture = LoadTexture("textures/ship_body.png");
+
+    myShip.consoleTexture = LoadTexture("textures/ship_base.jpg");
+    myShip.screenTexture = LoadTexture("textures/test.jpg");
+
 }
 
 void drawShip() {
@@ -297,7 +320,6 @@ void drawShip() {
     headMarkerBox.max = CVector(0.2, 0.2, 0.2);
     headMarkerBox.worldTransform = finalMat * transMat1;
     myShip.collisionBoxes.push_back(headMarkerBox);
-    DrawAABB(headMarkerBox, s);
 
     glutSolidSphere(0.2, 4, 4);
     glPopMatrix();
@@ -329,12 +351,68 @@ void drawShip() {
         hullBox.worldTransform = finalMat * transMat2;
         myShip.collisionBoxes.push_back(hullBox);
 
+        glPushMatrix();
+        {
+            // 左侧内部碰撞盒
+            transMat1.SetTrans(CVector(-0.259f, 0.0f, 0.68f)); // 稍微向内偏移
+            scaleMat1.SetScale(CVector(0.025f, 0.45f, 1.2f));   // 薄的长方体
+            glMultMatrixf(transMat1 * scaleMat1);
+
+            AABB leftInnerBox;
+            leftInnerBox.partName = "Ship Inner Body (Left)";
+            leftInnerBox.min = CVector(-0.5f, -0.5f, -0.5f);
+            leftInnerBox.max = CVector(0.5f, 0.5f, 0.5f);
+            leftInnerBox.worldTransform = finalMat * transMat2 * transMat1 * scaleMat1;
+            myShip.collisionBoxes.push_back(leftInnerBox);
+
+        }
+        glPopMatrix();
+
+        glPushMatrix();
+        {
+            // 右侧内部碰撞盒
+            transMat1.SetTrans(CVector(0.259f, 0.0f, 0.69f)); // 稍微向内偏移
+            scaleMat1.SetScale(CVector(0.025f, 0.45f, 1.2f));  // 薄的长方体
+            glMultMatrixf(transMat1 * scaleMat1);
+
+            AABB rightInnerBox;
+            rightInnerBox.partName = "Ship Inner Body (Right)";
+            rightInnerBox.min = CVector(-0.5f, -0.5f, -0.5f);
+            rightInnerBox.max = CVector(0.5f, 0.5f, 0.5f);
+            rightInnerBox.worldTransform = finalMat * transMat2 * transMat1 * scaleMat1;
+            myShip.collisionBoxes.push_back(rightInnerBox);
+
+            // 不需要实际绘制，仅用于碰撞检测
+        }
+        glPopMatrix();
+
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, myShip.bodyTexture);
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-        glColor3f(1.0f, 1.0f, 1.0f);
-        gluCylinder(quadric, 0.25f, 0.25f, 1.3f, 64, 64);
+        // 纹理参数设置
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // 计算纹理重复比例
+        float cylinderHeight = 1.3f;
+        float cylinderCircumference = 2 * 3.14159f * 0.25f;
+        float texRepeatY = cylinderHeight / cylinderCircumference;
+
+        // 应用纹理变换
+        glMatrixMode(GL_TEXTURE);
+        glPushMatrix();
+        CMatrix t1;
+        t1.SetScale(CVector(4.0f, texRepeatY * 4.0f, 1.0f));
+        glMultMatrixf(t1);
+
+        gluCylinder(quadric, 0.25f, 0.25f, cylinderHeight, 64, 64);
+
+        // 恢复纹理矩阵
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
 
         GLfloat disk_specular[] = { 0.9f, 0.9f, 0.9f, 1.0f };
         glMaterialfv(GL_FRONT, GL_SPECULAR, disk_specular);
@@ -343,8 +421,6 @@ void drawShip() {
 
         gluDeleteQuadric(quadric);
         glDisable(GL_TEXTURE_2D);
-
-        DrawAABB(hullBox, s);
     }
 
     // 船头部分
@@ -375,9 +451,10 @@ void drawShip() {
     glDisable(GL_BLEND);
     glPopAttrib();
 
-    DrawAABB(noseBox, s);
     glPopMatrix();
 
+
+    //控制台
     glPushMatrix();
     CMatrix transMat3;
     transMat3.SetTrans(CVector(0, 0, 1.3f));
@@ -403,7 +480,7 @@ void drawShip() {
             transMat1.SetTrans(CVector(0.0f, -0.105f, -0.4f));
             rotateMat1.SetRotate(180.0f, CVector(0, 1, 0));
             rotateMat2.SetRotate(5.0f, CVector(1, 0, 0));
-            glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
+            glMultMatrixf(transMat1* rotateMat1* rotateMat2);
 
             AABB consoleBaseBox;
             consoleBaseBox.partName = "Console Base";
@@ -412,24 +489,74 @@ void drawShip() {
             CMatrix tempMat = finalMat * transMat2 * transMat3 * scaleMat2 * transMat1 * rotateMat1 * rotateMat2;
             consoleBaseBox.worldTransform = tempMat;
             myShip.collisionBoxes.push_back(consoleBaseBox);
-            DrawAABB(consoleBaseBox, s);
+
+            // 控制台基座纹理绘制
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, myShip.consoleTexture);
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // 混合纹理与材质
+
+            // 设置纹理参数
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             scaleMat1.SetScale(CVector(0.8f, 0.05f, 0.3f));
             glPushMatrix();
             glMultMatrixf(scaleMat1);
-            glColor3f(0.2f, 0.2f, 0.2f);
-            glutSolidCube(1.0f);
-            glPopMatrix();
 
-            GLfloat screen_ambient[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-            GLfloat screen_specular[] = { 0.4f, 0.4f, 0.4f, 1.0f };
+            // 手动绘制带纹理的立方体
+            float texScale = 2.0f; // 纹理缩放比例
+            glBegin(GL_QUADS);
+
+            // 顶面
+            glNormal3f(0, 1, 0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
+            glTexCoord2f(0.0f, texScale); glVertex3f(-0.5f, 0.5f, 0.5f);
+            glTexCoord2f(texScale, texScale); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(texScale, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+
+            // 前面
+            glNormal3f(0, 0, 1);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+            glTexCoord2f(texScale, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+            glTexCoord2f(texScale, texScale); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(0.0f, texScale); glVertex3f(-0.5f, 0.5f, 0.5f);
+
+            // 后面
+            glNormal3f(0, 0, -1);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            glTexCoord2f(0.0f, texScale); glVertex3f(-0.5f, 0.5f, -0.5f);
+            glTexCoord2f(texScale, texScale); glVertex3f(0.5f, 0.5f, -0.5f);
+            glTexCoord2f(texScale, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+
+            // 左面
+            glNormal3f(-1, 0, 0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            glTexCoord2f(texScale, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+            glTexCoord2f(texScale, texScale); glVertex3f(-0.5f, 0.5f, 0.5f);
+            glTexCoord2f(0.0f, texScale); glVertex3f(-0.5f, 0.5f, -0.5f);
+
+            // 右面
+            glNormal3f(1, 0, 0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+            glTexCoord2f(texScale, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+            glTexCoord2f(texScale, texScale); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(0.0f, texScale); glVertex3f(0.5f, -0.5f, 0.5f);
+            glEnd();
+            glPopMatrix();
+            glDisable(GL_TEXTURE_2D);
+
+            // 屏幕材质设置
+            GLfloat screen_ambient[] = { 0.1f, 0.1f, 0.1f, 0.7f }; // 增加alpha值
+            GLfloat screen_specular[] = { 0.4f, 0.4f, 0.4f, 0.7f }; // 增加alpha值
             glMaterialfv(GL_FRONT, GL_AMBIENT, screen_ambient);
             glMaterialfv(GL_FRONT, GL_SPECULAR, screen_specular);
 
             transMat1.SetTrans(CVector(0.0f, 0.03f, 0.1f));
             scaleMat1.SetScale(CVector(0.7f, 0.03f, 0.2f));
             glPushMatrix();
-            glMultMatrixf(transMat1 * scaleMat1);
+            glMultMatrixf(transMat1* scaleMat1);
 
             AABB screenBox;
             screenBox.partName = "LCD Screen";
@@ -437,18 +564,78 @@ void drawShip() {
             screenBox.max = CVector(0.5f, 0.5f, 0.5f);
             screenBox.worldTransform = tempMat * transMat1 * scaleMat1;
             myShip.collisionBoxes.push_back(screenBox);
-            DrawAABB(screenBox, s);
 
-            glColor3f(0.1f, 0.1f, 0.1f);
-            glutSolidCube(1.0f);
+            // 启用混合以实现半透明效果
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            // 屏幕纹理绘制 - 完整实现
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, myShip.screenTexture);
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // 改为MODULATE以支持半透明
+
+            // 设置纹理参数
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            // 计算纹理重复比例（基于实际尺寸）
+            float temp = 4;
+            float texRepeatFront = 1.0f * temp; // 正面纹理重复比例
+            float texRepeatSide = 0.5f * temp;   // 侧面纹理重复比例
+            float texRepeatTop = 0.2f * temp;   // 顶面纹理重复比例
+
+            // 绘制屏幕立方体的所有面（避免透视错误）
+            glBegin(GL_QUADS);
+            // 正面（屏幕显示面）
+            glNormal3f(0, 0, 1);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f); // 左下
+            glTexCoord2f(texRepeatFront, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);  // 右下
+            glTexCoord2f(texRepeatFront, texRepeatFront); glVertex3f(0.5f, 0.5f, 0.5f);  // 右上
+            glTexCoord2f(0.0f, texRepeatFront); glVertex3f(-0.5f, 0.5f, 0.5f);  // 左上
+
+            // 背面（确保不会看到内部）
+            glNormal3f(0, 0, -1);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            glTexCoord2f(0.0f, texRepeatFront); glVertex3f(-0.5f, 0.5f, -0.5f);
+            glTexCoord2f(texRepeatFront, texRepeatFront); glVertex3f(0.5f, 0.5f, -0.5f);
+            glTexCoord2f(texRepeatFront, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+
+            // 顶面
+            glNormal3f(0, 1, 0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
+            glTexCoord2f(0.0f, texRepeatTop); glVertex3f(-0.5f, 0.5f, 0.5f);
+            glTexCoord2f(texRepeatFront, texRepeatTop); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(texRepeatFront, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+
+            // 底面
+            glNormal3f(0, -1, 0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            glTexCoord2f(texRepeatFront, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+            glTexCoord2f(texRepeatFront, texRepeatTop); glVertex3f(0.5f, -0.5f, 0.5f);
+            glTexCoord2f(0.0f, texRepeatTop); glVertex3f(-0.5f, -0.5f, 0.5f);
+
+            // 左侧面
+            glNormal3f(-1, 0, 0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, -0.5f, -0.5f);
+            glTexCoord2f(texRepeatSide, 0.0f); glVertex3f(-0.5f, -0.5f, 0.5f);
+            glTexCoord2f(texRepeatSide, texRepeatFront); glVertex3f(-0.5f, 0.5f, 0.5f);
+            glTexCoord2f(0.0f, texRepeatFront); glVertex3f(-0.5f, 0.5f, -0.5f);
+
+            // 右侧面
+            glNormal3f(1, 0, 0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(0.5f, -0.5f, -0.5f);
+            glTexCoord2f(texRepeatSide, 0.0f); glVertex3f(0.5f, -0.5f, 0.5f);
+            glTexCoord2f(texRepeatSide, texRepeatFront); glVertex3f(0.5f, 0.5f, 0.5f);
+            glTexCoord2f(0.0f, texRepeatFront); glVertex3f(0.5f, 0.5f, -0.5f);
+            glEnd();
+
+            glDisable(GL_TEXTURE_2D);
+            glDisable(GL_BLEND); // 禁用混合
             glPopMatrix();
 
-            GLfloat button_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-            GLfloat button_specular[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-            glMaterialfv(GL_FRONT, GL_AMBIENT, button_ambient);
-            glMaterialfv(GL_FRONT, GL_SPECULAR, button_specular);
-            glMaterialf(GL_FRONT, GL_SHININESS, 50.0f);
-
+            // 绘制按钮（保持原样）
             glColor3f(0.0f, 0.6f, 0.0f);
             glPushMatrix();
             transMat1.SetTrans(CVector(0.3f, 0.03f, -0.1f));
@@ -489,6 +676,12 @@ void drawShip() {
     glBindTexture(GL_TEXTURE_2D, myShip.floorTexture);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+    // 设置纹理参数
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     GLfloat floor_ambient[] = { 0.4f, 0.4f, 0.4f, 1.0f };
     GLfloat floor_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
     GLfloat floor_specular[] = { 0.2f, 0.2f, 0.2f, 1.0f };
@@ -498,37 +691,75 @@ void drawShip() {
     glMaterialf(GL_FRONT, GL_SHININESS, 20.0f);
 
     glPushMatrix();
-    transMat1.SetTrans(CVector(0, -0.055, 0));
-    scaleMat1.SetScale(CVector(0.475, 0.0002, 1.358));
-    glMultMatrixf(transMat1 * scaleMat1);
+    transMat1.SetTrans(CVector(0, -0.055, 0.01));
+    scaleMat1.SetScale(CVector(0.475, 0.0002, 1.278));
+    glMultMatrixf(transMat1* scaleMat1);
+
+    // 计算纹理重复次数（基于实际尺寸比例）
+    float texRepeatX = 4.0f; // X方向重复4次
+    float texRepeatZ = 1.358f / 0.475f * 4.0f; // Z方向按比例重复[3](@ref)
 
     glBegin(GL_QUADS);
     glNormal3f(0.0f, 1.0f, 0.0f);
     glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.5f, 0.5f, -0.5f);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
-    glTexCoord2f(1.0f, 1.0f); glVertex3f(0.5f, 0.5f, 0.5f);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.5f, 0.5f, 0.5f);
+    glTexCoord2f(texRepeatX, 0.0f); glVertex3f(0.5f, 0.5f, -0.5f);
+    glTexCoord2f(texRepeatX, texRepeatZ); glVertex3f(0.5f, 0.5f, 0.5f);
+    glTexCoord2f(0.0f, texRepeatZ); glVertex3f(-0.5f, 0.5f, 0.5f);
     glEnd();
 
     glPopMatrix();
     glDisable(GL_TEXTURE_2D);
 
+    //引擎
+
     glEnable(GL_LIGHT0);
-    glColor3f(1.0, 0.5, 0.0);
+    // 引擎部分（添加纹理）
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myShip.engineTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    GLfloat engine_ambient[] = { 0.7f, 0.5f, 0.2f, 1.0f };
+    GLfloat engine_diffuse[] = { 1.0f, 0.7f, 0.3f, 1.0f };
+    GLfloat engine_specular[] = { 1.0f, 0.9f, 0.5f, 1.0f };
+    glMaterialfv(GL_FRONT, GL_AMBIENT, engine_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, engine_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, engine_specular);
+    glMaterialf(GL_FRONT, GL_SHININESS, 76.0f);
+
     glPushMatrix();
     transMat1.SetTrans(CVector(0, 0, -0.8f));
     glMultMatrixf(transMat1);
 
-    AABB engineBox;
-    engineBox.partName = "Engine Nozzle";
-    engineBox.min = CVector(-0.2f, -0.2f, 0.0f);
-    engineBox.max = CVector(0.2f, 0.2f, 0.4f);
-    engineBox.worldTransform = finalMat * transMat1;
-    myShip.collisionBoxes.push_back(engineBox);
-    DrawAABB(engineBox, s);
+    // 使用UV映射绘制引擎圆锥体
+    GLUquadricObj* engineQuadric = gluNewQuadric();
+    gluQuadricTexture(engineQuadric, GL_TRUE);
+    gluQuadricNormals(engineQuadric, GLU_SMOOTH);
+    gluCylinder(engineQuadric, 0.2f, 0.0f, 0.4f, 16, 4); // 圆锥形喷嘴
+    gluDeleteQuadric(engineQuadric);
 
-    glutSolidCone(0.2, 0.4, 8, 4);
+    // 添加引擎内部发光效果（速度相关颜色）
+    glPushAttrib(GL_ALL_ATTRIB_BITS); // 保存所有OpenGL状态
+    glDisable(GL_LIGHTING);           // 禁用所有光照计算
+    glDisable(GL_TEXTURE_2D);         // 禁用纹理
+    glDisable(GL_BLEND);              // 禁用混合（除非需要半透明）
+    glDisable(GL_FOG);                // 禁用雾效
+    glDepthMask(GL_FALSE);            // 禁用深度写入（防止深度冲突）
+    glColorMaterial(GL_FRONT_AND_BACK, GL_EMISSION);
+    glEnable(GL_COLOR_MATERIAL);
+    float speed = myShip.speedLen;
+    float intensity = fmin(speed / 0.025f, 1.0f); // 0→0, 0.025→1.0
+    float glow = pow(intensity, 2.0f); // 二次方曲线增强亮度
+    glColor3f(glow, 0.0f, 0.0f); // RGB模式，纯红
+    // 绘制发光核心
+    glutSolidSphere(0.15f, 24, 24);
+    glPopAttrib(); // 恢复原始OpenGL状态
+
+
     glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, myShip.wingTexture);
@@ -578,15 +809,12 @@ CVector getShipDir(ship myShip) {
 void DrawWing(bool isRightWing, const CMatrix& shipTransform) {
     glPushMatrix();
 
-    glEnable(GL_TEXTURE_GEN_S);
-    glEnable(GL_TEXTURE_GEN_T);
-    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+    // 禁用纹理自动生成（关键修改）
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
 
-    GLfloat s_plane[4] = { 2.0f, 0.0f, 0.0f, 0.0f };
-    GLfloat t_plane[4] = { 0.0f, 0.0f, 2.0f, 0.0f };
-    glTexGenfv(GL_S, GL_OBJECT_PLANE, s_plane);
-    glTexGenfv(GL_T, GL_OBJECT_PLANE, t_plane);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myShip.wingTexture);
 
     GLfloat metal_ambient[] = { 0.4f, 0.4f, 0.4f, 1.0f };
     GLfloat metal_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
@@ -609,40 +837,59 @@ void DrawWing(bool isRightWing, const CMatrix& shipTransform) {
     wingBox.worldTransform = shipTransform * wingTransform;
     myShip.collisionBoxes.push_back(wingBox);
 
+    // 纹理重复参数（基于机翼实际尺寸）
+    const float texScaleX = 2.0f; // X方向重复度
+    const float texScaleY = 0.5f; // Y方向重复度
+    const float texScaleZ = 1.0f; // Z方向重复度
+
     glBegin(GL_QUADS);
+    // Front face
     glNormal3f(0.0f, 0.0f, 1.0f);
-    glVertex3f(-0.5f, -0.5f, 0.5f);
-    glVertex3f(0.5f, -0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);
-    glVertex3f(-0.5f, 0.5f, 0.5f);
+    glTexCoord2f(0.0f, 0.0f);                glVertex3f(-0.5f, -0.5f, 0.5f);
+    glTexCoord2f(texScaleX, 0.0f);           glVertex3f(0.5f, -0.5f, 0.5f);
+    glTexCoord2f(texScaleX, texScaleY);       glVertex3f(0.5f, 0.5f, 0.5f);
+    glTexCoord2f(0.0f, texScaleY);            glVertex3f(-0.5f, 0.5f, 0.5f);
 
+    // Back face
     glNormal3f(0.0f, 0.0f, -1.0f);
-    glVertex3f(-0.5f, -0.5f, -0.5f);
-    glVertex3f(-0.5f, 0.5f, -0.5f);
-    glVertex3f(0.5f, 0.5f, -0.5f);
-    glVertex3f(0.5f, -0.5f, -0.5f);
+    glTexCoord2f(0.0f, 0.0f);                glVertex3f(-0.5f, -0.5f, -0.5f);
+    glTexCoord2f(0.0f, texScaleY);            glVertex3f(-0.5f, 0.5f, -0.5f);
+    glTexCoord2f(texScaleX, texScaleY);       glVertex3f(0.5f, 0.5f, -0.5f);
+    glTexCoord2f(texScaleX, 0.0f);           glVertex3f(0.5f, -0.5f, -0.5f);
 
+    // Top face
     glNormal3f(0.0f, 1.0f, 0.0f);
-    glVertex3f(-0.5f, 0.5f, -0.5f);
-    glVertex3f(-0.5f, 0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, -0.5f);
+    glTexCoord2f(0.0f, 0.0f);                glVertex3f(-0.5f, 0.5f, -0.5f);
+    glTexCoord2f(0.0f, texScaleZ);            glVertex3f(-0.5f, 0.5f, 0.5f);
+    glTexCoord2f(texScaleX, texScaleZ);       glVertex3f(0.5f, 0.5f, 0.5f);
+    glTexCoord2f(texScaleX, 0.0f);            glVertex3f(0.5f, 0.5f, -0.5f);
 
+    // Bottom face
     glNormal3f(0.0f, -1.0f, 0.0f);
-    glVertex3f(-0.5f, -0.5f, -0.5f);
-    glVertex3f(0.5f, -0.5f, -0.5f);
-    glVertex3f(0.5f, -0.5f, 0.5f);
-    glVertex3f(-0.5f, -0.5f, 0.5f);
+    glTexCoord2f(0.0f, 0.0f);                glVertex3f(-0.5f, -0.5f, -0.5f);
+    glTexCoord2f(texScaleX, 0.0f);            glVertex3f(0.5f, -0.5f, -0.5f);
+    glTexCoord2f(texScaleX, texScaleZ);       glVertex3f(0.5f, -0.5f, 0.5f);
+    glTexCoord2f(0.0f, texScaleZ);            glVertex3f(-0.5f, -0.5f, 0.5f);
 
-    glNormal3f(wingSign, 0.0f, 0.0f);
-    glVertex3f(0.5f, -0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, 0.5f);
-    glVertex3f(0.5f, 0.5f, -0.5f);
-    glVertex3f(0.5f, -0.5f, -0.5f);
+
+    // 添加外部侧面（完整机翼表面）
+    glNormal3f(-wingSign, 0.0f, 0.0f);
+    if (isRightWing) {
+        // Right wing outer surface
+        glTexCoord2f(0.0f, 0.0f);            glVertex3f(0.5f, -0.5f, 0.5f);
+        glTexCoord2f(0.0f, texScaleY);        glVertex3f(0.5f, 0.5f, 0.5f);
+        glTexCoord2f(texScaleX, texScaleY);   glVertex3f(0.5f, 0.5f, -0.5f);
+        glTexCoord2f(texScaleX, 0.0f);       glVertex3f(0.5f, -0.5f, -0.5f);
+    }
+    else {
+        // Left wing outer surface
+        glTexCoord2f(0.0f, 0.0f);            glVertex3f(-0.5f, -0.5f, 0.5f);
+        glTexCoord2f(texScaleX, 0.0f);       glVertex3f(-0.5f, -0.5f, -0.5f);
+        glTexCoord2f(texScaleX, texScaleY);   glVertex3f(-0.5f, 0.5f, -0.5f);
+        glTexCoord2f(0.0f, texScaleY);        glVertex3f(-0.5f, 0.5f, 0.5f);
+    }
     glEnd();
 
-    DrawAABB(wingBox, s);
-    glDisable(GL_TEXTURE_GEN_S);
-    glDisable(GL_TEXTURE_GEN_T);
+    glDisable(GL_TEXTURE_2D);
     glPopMatrix();
 }

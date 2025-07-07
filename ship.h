@@ -38,9 +38,9 @@ struct ship {
     GLuint engineTexture;  // 引擎纹理
     GLuint wingTexture;    // 机翼纹理
     GLuint glassTexture;   // 玻璃材质
-    GLuint panelTexture;   // 仪表板
-    GLuint envMapTexture;  // 环境贴图
     GLuint floorTexture;
+    GLuint consoleTexture;
+    GLuint screenTexture;
 
     std::vector<AABB> collisionBoxes; // 存储包围盒信息
 };

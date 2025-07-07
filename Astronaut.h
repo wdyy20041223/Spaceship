@@ -46,4 +46,3 @@ void initAstronaut();
 void drawAstronaut();
 
 void DrawAABB(const AABB& box, char category);
-void DrawAABB2(const AABB& box, char category);

@@ -5,15 +5,21 @@
 #include "Camera.h"
 #include <GL/glut.h>
 #include <iostream>
+#include "global.h"
 
 // GLUT工具包
 
 #define M_PI 3.14159265358979323846f
 #define Fnum 2
 
+std::vector<std::pair<AABB, char>> g_debugAABBs;
+
 // 定义全局按键状态
 bool keyPressed[256] = { false };
 bool specialKeyPressed[256] = { false };
+
+cinfo cInfo[2];
+static int cInfoIndex = 0;
 
 // 外部变量声明（在其它模块中定义）
 extern ship myShip;
@@ -53,28 +59,149 @@ AABB transformAABB(const AABB& localBox) {
     CVector worldMin(FLT_MAX, FLT_MAX, FLT_MAX);
     CVector worldMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
+    CVector worldVert[8];
+
     for (int i = 0; i < 8; i++) {
         // 正确应用变换矩阵：M * v
-        CVector worldVert = localBox.worldTransform.posMul(vertices[i]);
-
-        worldMin.x = std::min(worldMin.x, worldVert.x);
-        worldMin.y = std::min(worldMin.y, worldVert.y);
-        worldMin.z = std::min(worldMin.z, worldVert.z);
-
-        worldMax.x = std::max(worldMax.x, worldVert.x);
-        worldMax.y = std::max(worldMax.y, worldVert.y);
-        worldMax.z = std::max(worldMax.z, worldVert.z);
+        worldVert[i] = localBox.worldTransform.posMul(vertices[i]);
     }
 
-    return AABB(localBox.partName, worldMin, worldMax, localBox.worldTransform);
+    AABB temp = AABB(localBox.partName, worldMin, worldMax, localBox.worldTransform);
+    // 复制顶点数据
+    for (int i = 0; i < 8; i++) {
+        temp.pos[i] = worldVert[i];
+    }
+
+    return temp;
 }
 
-// 检测两个AABB是否碰撞
-bool checkAABBCollision(const AABB& a, const AABB& b) {
-    return (a.min.x <= b.max.x && a.max.x >= b.min.x) &&
-        (a.min.y <= b.max.y && a.max.y >= b.min.y) &&
-        (a.min.z <= b.max.z && a.max.z >= b.min.z);
+// 安全归一化向量函数
+CVector safeNormalize(const CVector& v, const CVector& fallback) {
+    float length = v.len();
+    if (length < 1e-6f) {
+        // 对于零向量或非常短的向量，使用备用向量
+        return fallback.Normalized();
+    }
+    return v * (1.0f / length);
 }
+
+// 安全计算向量在特定轴上的投影长度
+float safeLength(const CVector& v, const CVector& axis) {
+    // 计算投影长度
+    float projection = v.dotMul(axis);
+
+    // 对于极短的轴，返回向量的原始长度
+    if (axis.len() < 1e-6f) return v.len();
+
+    return std::abs(projection);
+}
+
+// 更健壮的OBB碰撞检测函数
+bool CheckOBBCollision(const AABB& a, const AABB& b) {
+    // 1. 获取OBB的8个顶点
+    const CVector* aVertices = a.pos;
+    const CVector* bVertices = b.pos;
+
+    // 2. 计算OBB的中心点
+    CVector aCenter(0, 0, 0);
+    CVector bCenter(0, 0, 0);
+
+    for (int i = 0; i < 8; ++i) {
+        aCenter = aCenter + aVertices[i];
+        bCenter = bCenter + bVertices[i];
+    }
+    aCenter = aCenter * 0.125f; // /= 8
+    bCenter = bCenter * 0.125f;
+
+    // 3. 计算连接两个包围盒中心的向量
+    CVector v = bCenter - aCenter;
+
+    // 4. 安全计算轴方向
+    CVector aAxis[3], bAxis[3];
+    float aExtents[3], bExtents[3];
+
+    // 安全计算A的轴和半长
+    aAxis[0] = safeNormalize(aVertices[1] - aVertices[0], CVector(1, 0, 0));
+    aAxis[1] = safeNormalize(aVertices[3] - aVertices[0], CVector(0, 1, 0));
+    aAxis[2] = safeNormalize(aVertices[4] - aVertices[0], CVector(0, 0, 1));
+
+    aExtents[0] = safeLength(aVertices[0] - aCenter, aAxis[0]);
+    aExtents[1] = safeLength(aVertices[3] - aCenter, aAxis[1]);
+    aExtents[2] = safeLength(aVertices[4] - aCenter, aAxis[2]);
+
+    // 安全计算B的轴和半长
+    bAxis[0] = safeNormalize(bVertices[1] - bVertices[0], CVector(1, 0, 0));
+    bAxis[1] = safeNormalize(bVertices[3] - bVertices[0], CVector(0, 1, 0));
+    bAxis[2] = safeNormalize(bVertices[4] - bVertices[0], CVector(0, 0, 1));
+
+    bExtents[0] = safeLength(bVertices[0] - bCenter, bAxis[0]);
+    bExtents[1] = safeLength(bVertices[3] - bCenter, bAxis[1]);
+    bExtents[2] = safeLength(bVertices[4] - bCenter, bAxis[2]);
+
+    // 5. 初始化投影矩阵
+    float R[3][3];   // 旋转矩阵
+    float FR[3][3];  // 带容差的绝对旋转矩阵
+    for (int i = 0; i < 3; ++i) {
+        for (int k = 0; k < 3; ++k) {
+            R[i][k] = aAxis[i].dotMul(bAxis[k]);
+            FR[i][k] = std::abs(R[i][k]) + 1e-6f;
+        }
+    }
+
+    // 6. 分离轴测试
+    // 测试A的轴
+    for (int i = 0; i < 3; ++i) {
+        float ra = aExtents[i];
+        float rb = bExtents[0] * FR[i][0] + bExtents[1] * FR[i][1] + bExtents[2] * FR[i][2];
+        float t = std::abs(v.dotMul(aAxis[i]));
+        if (t > ra + rb) return false;
+    }
+
+    // 测试B的轴
+    for (int k = 0; k < 3; ++k) {
+        float ra = aExtents[0] * FR[0][k] + aExtents[1] * FR[1][k] + aExtents[2] * FR[2][k];
+        float rb = bExtents[k];
+        float t = std::abs(
+            v.dotMul(bAxis[0]) * R[0][k] +
+            v.dotMul(bAxis[1]) * R[1][k] +
+            v.dotMul(bAxis[2]) * R[2][k]
+        );
+        if (t > ra + rb) return false;
+    }
+
+    // 7. 安全测试叉积轴
+    const float minAxisLength = 1e-6f; // 最小可接受轴长度
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            CVector cross = aAxis[i].crossMul(bAxis[j]);
+            float crossLength = cross.len();
+
+            // 跳过太短的叉积轴
+            if (crossLength < minAxisLength) continue;
+
+            CVector L = cross * (1.0f / crossLength); // 安全归一化
+
+            float ra = 0;
+            for (int k = 0; k < 3; ++k) {
+                ra += aExtents[k] * std::abs(aAxis[k].dotMul(L));
+            }
+
+            float rb = 0;
+            for (int k = 0; k < 3; ++k) {
+                rb += bExtents[k] * std::abs(bAxis[k].dotMul(L));
+            }
+
+            float t = std::abs(v.dotMul(L));
+            if (t > ra + rb) return false;
+        }
+    }
+
+    // 8. 所有分离轴测试通过，存在碰撞
+    return true;
+}
+
+
 
 // 计算碰撞点（两个AABB的重叠区域中心）
 CVector calculateCollisionPoint(const AABB& shipBox, const AABB& astroBox) {
@@ -86,43 +213,43 @@ CVector calculateCollisionPoint(const AABB& shipBox, const AABB& astroBox) {
 
 // 检测飞船和宇航员的碰撞
 bool detectCollisions() {
-
-
-    static int frameCounter = 0;
-    frameCounter++;
-
-    // 每5帧检测一次，减少输出频率
-    //if (frameCounter % 60 != 0) return;
+    static int tempC = 0;
+    g_debugAABBs.clear();  // 清除上一帧的调试信息
 
     bool collisionDetected = false;
 
     for (auto& shipLocalBox : myShip.collisionBoxes) {
-        AABB shipWorldBox = transformAABB(shipLocalBox);
         if (shipLocalBox.partName == "Main Hull") continue;
+        AABB shipWorldBox = transformAABB(shipLocalBox);       
+        g_debugAABBs.push_back({ shipWorldBox , 's' });
 
         for (auto& astroLocalBox : astronaut.collisionBoxes) {
             AABB astroWorldBox = transformAABB(astroLocalBox);
+            g_debugAABBs.push_back({ astroWorldBox, 'a' });
 
-            if (checkAABBCollision(shipWorldBox, astroWorldBox)) {
-
+            if (CheckOBBCollision(shipWorldBox, astroWorldBox)) {
+               
                 CVector collisionPoint = calculateCollisionPoint(shipWorldBox, astroWorldBox);
-
-                std::cout << "\n--- COLLISION DETECTED ---\n";
-                std::cout << "Ship Part: " << shipLocalBox.partName << "\n";
-                std::cout << "Astronaut Part: " << astroLocalBox.partName << "\n";
-                std::cout << "Collision Point: ("
-                    << collisionPoint.x << ", "
-                    << collisionPoint.y << ", "
-                    << collisionPoint.z << ")\n";
-                std::cout << "-----------------------\n";
+                cInfo[cInfoIndex].astroPart = astroWorldBox.partName;
+                cInfo[cInfoIndex].shipPart = shipWorldBox.partName;
+                cInfo[cInfoIndex].collisionPoint = collisionPoint;
+                cInfoIndex = (cInfoIndex + 1) % 2;
 
                 collisionDetected = true;
             }
         }
     }
 
-    if (!collisionDetected && frameCounter % 120 == 0) {
-        std::cout << "No collisions detected.\n";
+    if (!collisionDetected) {
+        tempC++;
+        if (tempC == 90) {
+            for (int i = 0; i < 2; i++) {
+                cInfo[i].shipPart = "NULL";
+                cInfo[i].astroPart = "NULL";
+                cInfo[i].collisionPoint = CVector(0, 0, 0);
+            }
+            tempC = 0;
+        }
     }
     return collisionDetected;
 }
@@ -371,7 +498,6 @@ void checkKeyStates() {
             //宇航员
             if (keyPressed[KEY_ROLL_LEFT]) { 
                 astronaut.position = astronaut.position + astronaut.direction * astronaut.speedLen;
-                //astronautCamera.deltaPos = astronautCamera.deltaPos + astronaut.finalDir * astronaut.speedLen;
                 astronautCamera.deltaPos = astronautCamera.deltaPos + astronaut.finalDir * astronaut.speedLen;
             }
             if (keyPressed[KEY_ROLL_RIGHT]) { 

@@ -1,0 +1,77 @@
+[33mcommit 67be4c7de36c026c90563f6b6410ba9988a4facf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Sat Jul 5 23:53:04 2025 +0800
+
+    collision
+
+[33mcommit 089987d12b2a5c04ad59940bf430dcb37fa8494a[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Sat Jul 5 12:55:40 2025 +0800
+
+    better light
+
+[33mcommit dbe99f480144bc3de21c182f454ca5283a64b465[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Fri May 23 23:18:17 2025 +0800
+
+    better ship
+
+[33mcommit 76ab59bc6d0bce1391f50bb4d9caa7b64c0670cb[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Fri May 23 14:54:42 2025 +0800
+
+    to planet surface
+
+[33mcommit fcd8a45d9f8566c8a1614a76384baa8d0fb0bac9[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Thu May 22 22:38:08 2025 +0800
+
+    camera better, finish ship_light and option_guide
+
+[33mcommit 091601d243b42fd9177a1f41445919784edeafda[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Wed May 21 15:54:46 2025 +0800
+
+    shipCamera
+
+[33mcommit 8e278e5fbfc3fe4dc54e4ff9e44c463a4905bae9[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Tue May 20 23:50:30 2025 +0800
+
+    background lighter
+
+[33mcommit 4cd67d2c8b6233a308993140da79704302702b31[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Tue May 20 23:31:52 2025 +0800
+
+    更新.gitignore排除IDE文件
+
+[33mcommit db798ea29aaf7391ddbba75f4cf28131ae597dd3[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Tue May 20 21:35:13 2025 +0800
+
+    astronaut_textures and planets_light
+
+[33mcommit f1aa85347fad98ff6c3fe07e31258b94f80261b7[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Mon May 19 21:23:40 2025 +0800
+
+    successfully add wenli
+
+[33mcommit 2b23d623051ff2100edf189c29058afd60442610[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Mon May 19 20:51:25 2025 +0800
+
+    wenli
+
+[33mcommit 676820714fa25ee9fe0947cd09eb61c2ee220277[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Sat May 17 17:07:25 2025 +0800
+
+    planet
+
+[33mcommit 5ef038a0aa1945be2129a63f283f944ade3ccd7d[m
+Author: wdyy20041223 <2795352227@qq.com>
+Date:   Thu May 15 21:24:51 2025 +0800
+
+    first commit

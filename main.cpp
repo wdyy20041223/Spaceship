@@ -12,7 +12,6 @@
 
 
 
-
 void SetRC();
 void myReshape(int w, int h);
 void CheckCameraStateChange();
@@ -22,19 +21,27 @@ void init();
 extern Camera globalCamera,astronautCamera,tempCamera, shipCamera;  // 全局摄像机对象
 extern bool ControlingGlobal;
 extern CVector deltaLight;
-
+extern std::vector<std::pair<AABB, char>> g_debugAABBs;
+extern cinfo cInfo[2];
 
 
 // 绘制所有包围盒的函数
 void DrawAllBoundingBoxes() {
-    // 绘制飞船所有部分的包围盒
-    for (const auto& box : myShip.collisionBoxes) {
-        DrawAABB2(box, 's');
-    }
+    //// 绘制飞船所有部分的包围盒
+    //for (const auto& box : myShip.collisionBoxes) {
+    //    DrawAABB(box, 's');
+    //}
+
+    //// 绘制宇航员所有部分的包围盒
+    //for (const auto& box : astronaut.collisionBoxes) {
+    //    DrawAABB(box, 'a');
+    //}
 
     // 绘制宇航员所有部分的包围盒
-    for (const auto& box : astronaut.collisionBoxes) {
-        DrawAABB2(box, 'a');
+    for (const auto& debugPair : g_debugAABBs) {
+        const AABB& box = debugPair.first;
+        char category = debugPair.second;
+        DrawAABB(box, category);
     }
 
 }
@@ -78,16 +85,33 @@ void myDisplay() {
         forward = globalCamera.GetForwardDir();
         up = globalCamera.GetUpDir();
         target = pos + forward;
+        for (int i = 0; i < 2; i++) {
+            cInfo[i].shipPart = "NULL";
+            cInfo[i].astroPart = "NULL";
+            cInfo[i].collisionPoint = CVector(0,0,0);
+        }
     }
     else if (astronautCamera.online) {
         pos = astronautPos;
         up = astronautUp;
         target = astronautTarget;
+        if (!ControllingAstronaut) {
+            for (int i = 0; i < 2; i++) {
+                cInfo[i].shipPart = "NULL";
+                cInfo[i].astroPart = "NULL";
+                cInfo[i].collisionPoint = CVector(0, 0, 0);
+            }
+        }
     }
     else {
         pos = shipPos;
         up = shipUp;
         target = shipTarget;
+        for (int i = 0; i < 2; i++) {
+            cInfo[i].shipPart = "NULL";
+            cInfo[i].astroPart = "NULL";
+            cInfo[i].collisionPoint = CVector(0, 0, 0);
+        }
     }
 
     gluLookAt(pos.x, pos.y, pos.z,
@@ -100,6 +124,7 @@ void myDisplay() {
     drawAxis();
     drawStars();
 
+    detectCollisions();
     DrawAllBoundingBoxes();
 
 

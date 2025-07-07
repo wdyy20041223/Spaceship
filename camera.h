@@ -3,6 +3,7 @@
 #define CAMERA_H
 
 #include "CEuler.h"
+#include "AABB.h"
 #include "CQuaternion.h"
 #include "CVector.h"
 #include <GL/glew.h>      // OpenGLÀ©Õ¹

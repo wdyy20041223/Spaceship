@@ -5,6 +5,9 @@
 #include <GL/glew.h>      // OpenGL扩展
 
 #include "Astronaut.h"
+#include "AABB.h"
+
+extern std::vector<std::pair<AABB, char>> g_debugAABBs; // 保存包围盒和类别('s'或'a')
 
 #define SPEED_UP    'u'//飞船加减速
 #define SPEED_DOWN  'j'
@@ -56,6 +59,7 @@ void specialUp(int key, int x, int y);
 // 声明每帧状态检测函数
 void checkKeyStates();
 
+bool detectCollisions();
 
 
 #endif // KEYBOARD_H

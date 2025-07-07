@@ -149,10 +149,11 @@ public:
     }
 
     void output() {
-        printf("%f %f %f\n", this->x, this->y, this->z);
+        printf("%f %f %f", this->x, this->y, this->z);
     }
 
     CVector operator-() const {
+        return CVector(-x, -y, -z);
         return CVector(-x, -y, -z);
     }
 

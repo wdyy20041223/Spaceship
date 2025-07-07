@@ -115,7 +115,6 @@ void drawAstronaut() {
     headBox.max = CVector(0.3, 0.3, 0.3);
     headBox.worldTransform = finalMat * transMat1;
     astronaut.collisionBoxes.push_back(headBox);
-    DrawAABB(headBox,a);
 
     // 启用球面映射纹理坐标
     glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
@@ -144,8 +143,7 @@ void drawAstronaut() {
     bodyBox.worldTransform = finalMat * transMat1 * scaleMat1;
     astronaut.collisionBoxes.push_back(bodyBox);
 
-    
-    DrawAABB(bodyBox,a);
+   
 
     // 调整后的纹理生成平面参数
     GLfloat sPlane[] = { 1.0f, 0.0f, 0.0f, 0.0f };  // X轴方向，系数从2.25降为1.0
@@ -179,7 +177,6 @@ void drawAstronaut() {
     rightArmBox.max = CVector(0.1, 0.1, 0.8);
     rightArmBox.worldTransform = finalMat * transMat1 * rotateMat1;
     astronaut.collisionBoxes.push_back(rightArmBox);  
-    DrawAABB(rightArmBox,a);
 
     // 添加法线计算（圆锥体需要特殊处理）
     GLUquadricObj* quadric = gluNewQuadric();
@@ -217,8 +214,7 @@ void drawAstronaut() {
     leftArmBox.worldTransform = finalMat * transMat1 * rotateMat1;
     astronaut.collisionBoxes.push_back(leftArmBox);
 
-    
-    DrawAABB(leftArmBox,a);
+   
 
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
@@ -256,7 +252,6 @@ void drawAstronaut() {
     astronaut.collisionBoxes.push_back(rightLegBox);
 
     
-    DrawAABB(rightLegBox,a);
 
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
@@ -295,9 +290,6 @@ void drawAstronaut() {
     leftLegBox.worldTransform = finalMat * transMat1 * rotateMat1 * rotateMat2;
     astronaut.collisionBoxes.push_back(leftLegBox);
 
-    
-    DrawAABB(leftLegBox,a);
-
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
     gluQuadricNormals(quadric, GLU_SMOOTH);
@@ -325,83 +317,15 @@ void drawAstronaut() {
     
 }
 
-void DrawAABB(const AABB& box ,char category) {
-    // 保存当前状态
-    glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT | GL_LINE_BIT);
-    glPushMatrix();
-    glScalef(1.001f, 1.001f, 1.001f);
 
-    // 禁用光照和纹理
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-
-    // 设置线框模式
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glLineWidth(2.0f);
-
-    // 根据部位名称设置不同颜色
-    if (category == 'a') glColor3f(1.0f, 0.0f, 0.0f); 
-    else if (category == 's') glColor3f(0.0f, 1.0f, 0.0f); 
-
-    // 绘制机翼几何体后，禁用纹理坐标生成
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_GEN_S);  // 新增
-    glDisable(GL_TEXTURE_GEN_T);  // 新增
-
-    // 绘制包围盒
-    glBegin(GL_QUADS);
-
-    // 前面
-    glVertex3f(box.min.x, box.min.y, box.max.z);
-    glVertex3f(box.max.x, box.min.y, box.max.z);
-    glVertex3f(box.max.x, box.max.y, box.max.z);
-    glVertex3f(box.min.x, box.max.y, box.max.z);
-
-    // 后面
-    glVertex3f(box.min.x, box.min.y, box.min.z);
-    glVertex3f(box.min.x, box.max.y, box.min.z);
-    glVertex3f(box.max.x, box.max.y, box.min.z);
-    glVertex3f(box.max.x, box.min.y, box.min.z);
-
-    // 上面
-    glVertex3f(box.min.x, box.max.y, box.min.z);
-    glVertex3f(box.min.x, box.max.y, box.max.z);
-    glVertex3f(box.max.x, box.max.y, box.max.z);
-    glVertex3f(box.max.x, box.max.y, box.min.z);
-
-    // 下面
-    glVertex3f(box.min.x, box.min.y, box.min.z);
-    glVertex3f(box.max.x, box.min.y, box.min.z);
-    glVertex3f(box.max.x, box.min.y, box.max.z);
-    glVertex3f(box.min.x, box.min.y, box.max.z);
-
-    // 左面
-    glVertex3f(box.min.x, box.min.y, box.min.z);
-    glVertex3f(box.min.x, box.min.y, box.max.z);
-    glVertex3f(box.min.x, box.max.y, box.max.z);
-    glVertex3f(box.min.x, box.max.y, box.min.z);
-
-    // 右面
-    glVertex3f(box.max.x, box.min.y, box.max.z);
-    glVertex3f(box.max.x, box.min.y, box.min.z);
-    glVertex3f(box.max.x, box.max.y, box.min.z);
-    glVertex3f(box.max.x, box.max.y, box.max.z);
-
-    glEnd();
-
-    // 恢复状态
-    glPopMatrix();
-    glPopAttrib();
-}
-
-void DrawAABB2(const AABB& box, char category) {
+void DrawAABB(const AABB& box, char category) {
     glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT | GL_LINE_BIT);
     glPushMatrix();
 
     // 应用世界变换矩阵
-    glMultMatrixf(box.worldTransform);
-    glScalef(1.1f, 1.1f, 1.1f);
+    //glMultMatrixf(box.worldTransform);
+
+    glScalef(1.03f, 1.03f, 1.03f);
 
     // 禁用光照和纹理
     glDisable(GL_LIGHTING);
@@ -413,47 +337,49 @@ void DrawAABB2(const AABB& box, char category) {
 
     // 根据类别设置颜色
     if (category == 'a')
-        glColor3f(1.0f, 1.0f, 0.0f); 
+        glColor3f(1.0f, 1.0f, 0.0f);
     else if (category == 's')
-        glColor3f(0.0f, 0.0f, 1.0f); 
+        glColor3f(0.0f, 0.0f, 1.0f);
 
-    // 绘制包围盒
+    // 绘制包围盒 - 使用8个顶点绘制长方体的6个面
     glBegin(GL_QUADS);
-    // 前面
-    glVertex3f(box.min.x, box.min.y, box.max.z);
-    glVertex3f(box.max.x, box.min.y, box.max.z);
-    glVertex3f(box.max.x, box.max.y, box.max.z);
-    glVertex3f(box.min.x, box.max.y, box.max.z);
 
-    // 后面
-    glVertex3f(box.min.x, box.min.y, box.min.z);
-    glVertex3f(box.min.x, box.max.y, box.min.z);
-    glVertex3f(box.max.x, box.max.y, box.min.z);
-    glVertex3f(box.max.x, box.min.y, box.min.z);
+    // 底面（+Z方向）
+    glVertex3f(box.pos[0].x, box.pos[0].y, box.pos[0].z);
+    glVertex3f(box.pos[1].x, box.pos[1].y, box.pos[1].z);
+    glVertex3f(box.pos[5].x, box.pos[5].y, box.pos[5].z);
+    glVertex3f(box.pos[4].x, box.pos[4].y, box.pos[4].z);
 
-    // 上面
-    glVertex3f(box.min.x, box.max.y, box.min.z);
-    glVertex3f(box.min.x, box.max.y, box.max.z);
-    glVertex3f(box.max.x, box.max.y, box.max.z);
-    glVertex3f(box.max.x, box.max.y, box.min.z);
+    // 顶面（-Z方向）
+    glVertex3f(box.pos[2].x, box.pos[2].y, box.pos[2].z);
+    glVertex3f(box.pos[6].x, box.pos[6].y, box.pos[6].z);
+    glVertex3f(box.pos[7].x, box.pos[7].y, box.pos[7].z);
+    glVertex3f(box.pos[3].x, box.pos[3].y, box.pos[3].z);
 
-    // 下面
-    glVertex3f(box.min.x, box.min.y, box.min.z);
-    glVertex3f(box.max.x, box.min.y, box.min.z);
-    glVertex3f(box.max.x, box.min.y, box.max.z);
-    glVertex3f(box.min.x, box.min.y, box.max.z);
+    // 前面（-X方向）
+    glVertex3f(box.pos[0].x, box.pos[0].y, box.pos[0].z);
+    glVertex3f(box.pos[2].x, box.pos[2].y, box.pos[2].z);
+    glVertex3f(box.pos[3].x, box.pos[3].y, box.pos[3].z);
+    glVertex3f(box.pos[1].x, box.pos[1].y, box.pos[1].z);
 
-    // 左面
-    glVertex3f(box.min.x, box.min.y, box.min.z);
-    glVertex3f(box.min.x, box.min.y, box.max.z);
-    glVertex3f(box.min.x, box.max.y, box.max.z);
-    glVertex3f(box.min.x, box.max.y, box.min.z);
+    // 后面（+X方向）
+    glVertex3f(box.pos[4].x, box.pos[4].y, box.pos[4].z);
+    glVertex3f(box.pos[5].x, box.pos[5].y, box.pos[5].z);
+    glVertex3f(box.pos[7].x, box.pos[7].y, box.pos[7].z);
+    glVertex3f(box.pos[6].x, box.pos[6].y, box.pos[6].z);
 
-    // 右面
-    glVertex3f(box.max.x, box.min.y, box.max.z);
-    glVertex3f(box.max.x, box.min.y, box.min.z);
-    glVertex3f(box.max.x, box.max.y, box.min.z);
-    glVertex3f(box.max.x, box.max.y, box.max.z);
+    // 左面（+Y方向）
+    glVertex3f(box.pos[0].x, box.pos[0].y, box.pos[0].z);
+    glVertex3f(box.pos[4].x, box.pos[4].y, box.pos[4].z);
+    glVertex3f(box.pos[6].x, box.pos[6].y, box.pos[6].z);
+    glVertex3f(box.pos[2].x, box.pos[2].y, box.pos[2].z);
+
+    // 右面（-Y方向）
+    glVertex3f(box.pos[1].x, box.pos[1].y, box.pos[1].z);
+    glVertex3f(box.pos[3].x, box.pos[3].y, box.pos[3].z);
+    glVertex3f(box.pos[7].x, box.pos[7].y, box.pos[7].z);
+    glVertex3f(box.pos[5].x, box.pos[5].y, box.pos[5].z);
+
     glEnd();
 
     // 恢复状态

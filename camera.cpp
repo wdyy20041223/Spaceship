@@ -14,6 +14,8 @@ extern CVector g_lastCamUp;
 extern float g_lastCamSpeed;
 extern Camera::ControlMode g_lastCamMode;
 extern bool ControlingGlobal,needGuide;
+extern cinfo cInfo[2];
+
 
 void Camera::StartTransitionTo(Camera& target, float duration) {
 
@@ -150,6 +152,7 @@ void Camera::RotateYaw(float angleDelta) {
         rot.SetAngle(angleDelta * rotateSpeed, up); // 角度转换为弧度
         orientation = rot * orientation; 
         orientation.Normalize();
+        UpdateEulerFromOrientation();
     }
 }
 
@@ -169,6 +172,7 @@ void Camera::RotatePitch(float angleDelta) {
         rot.SetAngle(angleDelta * rotateSpeed, right);
         orientation = rot * orientation;
         orientation.Normalize();
+        UpdateEulerFromOrientation();
     }
 }
 
@@ -187,6 +191,7 @@ void Camera::RotateRoll(float angleDelta) {
         rot.SetAngle(angleDelta * rotateSpeed, forward);
         orientation = rot * orientation; 
         orientation.Normalize();
+        UpdateEulerFromOrientation();
     }
 }
 
@@ -399,6 +404,37 @@ void Camera::OptionInfo(const char* viewType) const {
     GLint yPos = viewport[3] - 30;
 
     char buffer[256];
+
+    float startX = rightColumnX;
+
+    snprintf(buffer, sizeof(buffer), "Recent Collisions:");
+    RenderString(startX, yPos, buffer);
+    yPos -= 30;
+
+    // 显示两次碰撞信息
+    for (int i = 0; i < 2; i++) {
+        // 检查是否有有效的碰撞信息
+        if (cInfo[i].shipPart != "" || cInfo[i].astroPart != "") {
+            // 飞船部件信息
+            snprintf(buffer, sizeof(buffer), "[%d] Ship: %s", i + 1, cInfo[i].shipPart.c_str());
+            RenderString(startX, yPos, buffer);
+            yPos -= 20;
+
+            // 宇航员部件信息
+            snprintf(buffer, sizeof(buffer), "   Astronaut: %s", cInfo[i].astroPart.c_str());
+            RenderString(startX, yPos, buffer);
+            yPos -= 20;
+
+            // 碰撞点坐标
+            snprintf(buffer, sizeof(buffer), "   Point: (%.2f, %.2f, %.2f)",
+                cInfo[i].collisionPoint.x,
+                cInfo[i].collisionPoint.y,
+                cInfo[i].collisionPoint.z);
+            RenderString(startX, yPos, buffer);
+            yPos -= 30;  // 为下一次碰撞信息留出空间
+        }
+    }
+
     if (strcmp(viewType, "Global") == 0) {
         glColor3f(0.0f, 0.9f, 0.9f); // 青色区分右侧列
         snprintf(buffer, sizeof(buffer), "------------Operation Guide-----------");
