@@ -10,8 +10,6 @@ void shipMove() {
     myShip.direction = getShipDir(myShip);
     myShip.speed = myShip.direction * myShip.speedLen;
     myShip.position = myShip.position + myShip.speed;
-    astronautCamera.origonPos = astronautCamera.origonPos + myShip.speed;
-    shipCamera.origonPos = shipCamera.origonPos + myShip.speed;
 }
 CVector getForwardDirection(const CQuaternion& orientation) {
     CVector baseForward(0, 0, -1);
@@ -37,14 +35,6 @@ void autoShip() {
             CQuaternion q1 = tempdir1.ToEuler().ToQuaternion();
             CQuaternion q2 = finalDir.ToEuler().ToQuaternion();
             CQuaternion deltaQ = q2 * q1.Inverse();
-
-            astronautCamera.orientation = deltaQ * astronautCamera.orientation;
-            astronautCamera.orientation.Normalize();
-            astronautCamera.UpdateEulerFromOrientation();
-
-            shipCamera.orientation = deltaQ * astronautCamera.orientation;
-            shipCamera.orientation.Normalize();
-            shipCamera.UpdateEulerFromOrientation();
 
             myShip.orientation = deltaQ * myShip.orientation;
 
@@ -359,7 +349,7 @@ void drawShip() {
             glMultMatrixf(transMat1 * scaleMat1);
 
             AABB leftInnerBox;
-            leftInnerBox.partName = "Ship Inner Body (Left)";
+            leftInnerBox.partName = "Ship Inner Body (Right)";
             leftInnerBox.min = CVector(-0.5f, -0.5f, -0.5f);
             leftInnerBox.max = CVector(0.5f, 0.5f, 0.5f);
             leftInnerBox.worldTransform = finalMat * transMat2 * transMat1 * scaleMat1;
@@ -376,7 +366,7 @@ void drawShip() {
             glMultMatrixf(transMat1 * scaleMat1);
 
             AABB rightInnerBox;
-            rightInnerBox.partName = "Ship Inner Body (Right)";
+            rightInnerBox.partName = "Ship Inner Body (Left)";
             rightInnerBox.min = CVector(-0.5f, -0.5f, -0.5f);
             rightInnerBox.max = CVector(0.5f, 0.5f, 0.5f);
             rightInnerBox.worldTransform = finalMat * transMat2 * transMat1 * scaleMat1;
@@ -447,7 +437,7 @@ void drawShip() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f(0.6, 0.4, 0.7, 0.5);
-    glutSolidCone(0.25f, 0.6f, 64, 64);
+    glutSolidCone(0.25f, 0.6f, 64, 16);
     glDisable(GL_BLEND);
     glPopAttrib();
 
@@ -692,7 +682,7 @@ void drawShip() {
 
     glPushMatrix();
     transMat1.SetTrans(CVector(0, -0.055, 0.01));
-    scaleMat1.SetScale(CVector(0.475, 0.0002, 1.278));
+    scaleMat1.SetScale(CVector(0.485, 0.0002, 1.278));
     glMultMatrixf(transMat1* scaleMat1);
 
     // 计算纹理重复次数（基于实际尺寸比例）

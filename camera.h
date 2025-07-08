@@ -12,6 +12,10 @@
 // 相机类，支持欧拉角和本地四元数两种控制模式
 class Camera {
 public:
+    char name;
+    float x;
+    float y;
+    float z;
 
     // 过渡状态结构
     struct {
@@ -46,6 +50,9 @@ public:
     void RenderInfo(const char* viewType) const;
     void OptionInfo(const char* viewType) const;
     const char* GetControlModeString() const;
+
+    CQuaternion realOrientation; // 四元数表示的朝向
+    CEuler realEulerAngles;       // 欧拉角表示的旋转（弧度制）
 
     Camera();
     // 切换控制模式，并同步更新朝向数据

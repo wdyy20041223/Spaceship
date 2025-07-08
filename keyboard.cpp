@@ -10,7 +10,7 @@
 // GLUT工具包
 
 #define M_PI 3.14159265358979323846f
-#define Fnum 2
+#define Fnum 5
 
 std::vector<std::pair<AABB, char>> g_debugAABBs;
 
@@ -32,6 +32,7 @@ extern CVector deltaLight;
 
 struct AstronautState {
     CVector position;
+    CVector op;
     CVector cameraPos;
     CEuler angles;
     CQuaternion orientation;
@@ -242,7 +243,7 @@ bool detectCollisions() {
 
     if (!collisionDetected) {
         tempC++;
-        if (tempC == 90) {
+        if (tempC == 150) {
             for (int i = 0; i < 2; i++) {
                 cInfo[i].shipPart = "NULL";
                 cInfo[i].astroPart = "NULL";
@@ -456,30 +457,23 @@ void checkKeyStates() {
                 // 方向控制
                 // 修改原有欧拉角操作为四元数旋转
                 if (keyPressed[KEY_UP]) {
-                    ShipPitch(myShip.angleStep); astronautCamera.RotatePitch(myShip.angleStep);
-                    shipCamera.RotatePitch(myShip.angleStep);
+                    ShipPitch(myShip.angleStep); 
                 }
                 if (keyPressed[KEY_DOWN]) {
-                    ShipPitch(-myShip.angleStep); astronautCamera.RotatePitch(-myShip.angleStep);
-                    shipCamera.RotatePitch(-myShip.angleStep);
+                    ShipPitch(-myShip.angleStep);
                 }
-                if (keyPressed[KEY_LEFT]) { ShipYaw(+myShip.angleStep);  astronautCamera.RotateYaw(myShip.angleStep);
-                    shipCamera.RotateYaw(myShip.angleStep);
+                if (keyPressed[KEY_LEFT]) { 
+                    ShipYaw(+myShip.angleStep);
                 }
                 if (keyPressed[KEY_RIGHT]) {
-                    ShipYaw(-myShip.angleStep);  astronautCamera.RotateYaw(-myShip.angleStep);
-                    shipCamera.RotateYaw(-myShip.angleStep);
+                    ShipYaw(-myShip.angleStep);
                 }
-                if (keyPressed[KEY_ROLL_LEFT]) { ShipRoll(+myShip.angleStep); astronautCamera.RotateRoll(-myShip.angleStep);
-                    shipCamera.RotateRoll(-myShip.angleStep);
+                if (keyPressed[KEY_ROLL_LEFT]) { 
+                    ShipRoll(+myShip.angleStep);
                 }
                 if (keyPressed[KEY_ROLL_RIGHT]) {
-                    ShipRoll(-myShip.angleStep); astronautCamera.RotateRoll(myShip.angleStep);
-                    shipCamera.RotateRoll(myShip.angleStep);
+                    ShipRoll(-myShip.angleStep);
                 }
-
-                astronautCamera.Update();
-                shipCamera.Update();
             }
         }       
     }
@@ -487,6 +481,7 @@ void checkKeyStates() {
         if (ControllingAstronaut) {
             AstronautState initialState = {
                 astronaut.position,
+                astronautCamera.origonPos,
                 astronautCamera.deltaPos,
                 astronaut.allAngle,
                 astronautCamera.orientation
@@ -498,11 +493,11 @@ void checkKeyStates() {
             //宇航员
             if (keyPressed[KEY_ROLL_LEFT]) { 
                 astronaut.position = astronaut.position + astronaut.direction * astronaut.speedLen;
-                astronautCamera.deltaPos = astronautCamera.deltaPos + astronaut.finalDir * astronaut.speedLen;
+                //astronautCamera.deltaPos = astronautCamera.deltaPos + astronaut.finalDir * astronaut.speedLen;
             }
             if (keyPressed[KEY_ROLL_RIGHT]) { 
                 astronaut.position = astronaut.position - astronaut.direction * astronaut.speedLen; 
-                astronautCamera.deltaPos = astronautCamera.deltaPos - astronaut.finalDir * astronaut.speedLen;
+                //astronautCamera.deltaPos = astronautCamera.deltaPos - astronaut.finalDir * astronaut.speedLen;
             }
 
             if (keyPressed[KEY_LEFT]) {
@@ -526,6 +521,7 @@ void checkKeyStates() {
                 // 回退到初始状态（输入处理前的状态）
                 AstronautState initialState2 = stateBuffer[(currentStateIndex + 1) % Fnum];
                 astronaut.position = initialState2.position;
+                //astronautCamera.origonPos = initialState2.cameraPos;
                 astronautCamera.deltaPos = initialState2.cameraPos;
                 astronaut.allAngle = initialState2.angles;
                 astronautCamera.orientation = initialState2.orientation;

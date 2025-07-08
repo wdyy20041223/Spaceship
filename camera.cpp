@@ -22,7 +22,7 @@ void Camera::StartTransitionTo(Camera& target, float duration) {
     tempCamera = *this;
     transition.isActive = true;
     tempCamera.transition.startPos = this->position;
-    tempCamera.transition.startOrientation = this->orientation;
+    tempCamera.transition.startOrientation = this->realOrientation;
     tempCamera.transition.targetCamera = &target;
     tempCamera.transition.duration = duration;
     tempCamera.transition.progress = 0.00f;
@@ -37,7 +37,7 @@ bool Camera::UpdateTransition(float deltaTime) {
 
     // 获取目标相机的当前状态
     CVector targetPos = tempCamera.transition.targetCamera->position;
-    CQuaternion targetOrientation = tempCamera.transition.targetCamera->orientation;
+    CQuaternion targetOrientation = tempCamera.transition.targetCamera->realOrientation;
 
     if (tempCamera.transition.progress >= 1.0f) {
         // 过渡完成
@@ -49,8 +49,10 @@ bool Camera::UpdateTransition(float deltaTime) {
         if (transition.targetCamera == &planetCamera) {
             globalCamera.online = true;
             globalCamera.origonPos = planetCamera.origonPos;
-            globalCamera.position = CVector(0, 0, 0);
-            globalCamera.orientation = planetCamera.orientation;
+            globalCamera.deltaPos = CVector(0, 0, 0);
+            /*globalCamera.origonPos = planetCamera.origonPos;
+            globalCamera.position = CVector(0, 0, 0);*/
+            globalCamera.orientation = planetCamera.realOrientation;
         }
 
         if (tempCamera.transition.targetCamera == &globalCamera|| tempCamera.transition.targetCamera == &planetCamera) {
@@ -69,7 +71,7 @@ bool Camera::UpdateTransition(float deltaTime) {
         tempCamera.position = tempCamera.transition.startPos * (1 - t) + targetPos * t;
 
         // 球面线性插值朝向
-        tempCamera.orientation = tempCamera.transition.startOrientation.Slerp(targetOrientation, t);
+        tempCamera.realOrientation = tempCamera.transition.startOrientation.Slerp(targetOrientation, t);
         UpdateEulerFromOrientation();
         return false;
     }
@@ -94,43 +96,75 @@ void Camera::SwitchControlMode(ControlMode newMode) {
     if (newMode == EULER) {
         // 从四元数获取欧拉角并规范化
         eulerAngles = orientation.ToEuler();
+        realEulerAngles = realOrientation.ToEuler();
         eulerAngles.Normal();
     }
     else {
         // 从欧拉角生成四元数并归一化
         orientation = eulerAngles.ToQuaternion();
+        realOrientation = realEulerAngles.ToQuaternion();
         orientation.Normalize();
     }
     currentMode = newMode;
 }
 
 void Camera::MoveUp() {
-    origonPos = origonPos + GetUpDir() * speedLen;
+    if (name == 'g'){
+        deltaPos = deltaPos + GetUpDir() * speedLen;
+    }
+    else {
+        y += speedLen;
+    }
+        
 
 }
 
 void Camera::MoveDown() {
-    origonPos = origonPos - GetUpDir() * speedLen;
+    if (name == 'g') {
+        deltaPos = deltaPos - GetUpDir() * speedLen;
+    }
+    else {
+        y -= speedLen;
+    }
 
 }
 
 void Camera::MoveLeft() {
-    origonPos = origonPos + GetRightDir() * speedLen;
+    if (name == 'g') {
+        deltaPos = deltaPos + GetRightDir() * speedLen;
+    }
+    else {
+        x += speedLen;
+    }
 
 }
 
 void Camera::MoveRight() {
-    origonPos = origonPos - GetRightDir() * speedLen;
+    if (name == 'g') {
+        deltaPos = deltaPos - GetRightDir() * speedLen;
+    }
+    else {
+        x -= speedLen;
+    }
 
 }
 
 void Camera::MoveFront() {
-    origonPos = origonPos + GetForwardDir() * speedLen;
-
+    if(name == 'g') {
+        deltaPos = deltaPos + GetForwardDir()* speedLen;
+    }
+    else {
+        z += speedLen;
+    }
 }
 
 void Camera::MoveBack() {
-    origonPos = origonPos - GetForwardDir() * speedLen;
+    if (name == 'g') {
+        deltaPos = deltaPos - GetForwardDir() * speedLen;
+    }
+    else {
+        z -= speedLen;
+    }
 
 }
 
@@ -198,27 +232,27 @@ void Camera::RotateRoll(float angleDelta) {
 /* 获取欧拉角表示
  * 根据当前模式返回对应数据 */
 CEuler Camera::GetEulerAngles() const {
-    return (currentMode == EULER) ? eulerAngles : orientation.ToEuler();
+    return (currentMode == EULER) ? realEulerAngles : realOrientation.ToEuler();
 }
 
 /* 获取前方向向量
  * 从旋转矩阵的第三列（z轴方向）提取 */
 CVector Camera::GetForwardDir() const {//初始（-1,-1,-1）
-    CMatrix mat = orientation.ToMatrix();
+    CMatrix mat = realOrientation.ToMatrix();
     return CVector(mat.m02, mat.m12, mat.m22).Normalized();
 }
 
 /* 获取上方向向量
  * 从旋转矩阵的第二列（y轴方向）提取 */
 CVector Camera::GetUpDir() const {
-    CMatrix mat = orientation.ToMatrix();
+    CMatrix mat = realOrientation.ToMatrix();
     return CVector(mat.m01, mat.m11, mat.m21).Normalized();
 }
 
 /* 获取右方向向量（私有辅助函数）
  * 从旋转矩阵的第一列（x轴方向）提取 */
 CVector Camera::GetRightDir() const {
-    CMatrix mat = orientation.ToMatrix();
+    CMatrix mat = realOrientation.ToMatrix();
     return CVector(mat.m00, mat.m10, mat.m20).Normalized();
 }
 
@@ -234,6 +268,7 @@ void Camera::UpdateOrientationFromEuler() {
 void Camera::UpdateEulerFromOrientation() {
     eulerAngles = orientation.ToEuler();
     eulerAngles.Normal(); // 保持角度在合理范围
+    realEulerAngles = realOrientation.ToEuler();
 }
 
 //状态更新函数
@@ -333,8 +368,11 @@ void initCamera() {
     globalCamera.origonPos = CVector(5, 5, 5);
 
     globalCamera.online = true;
+    globalCamera.name = 'g';
     astronautCamera.online = false;
+    astronautCamera.name = 'a';
     shipCamera.online = false;
+    shipCamera.name = 's';
 
     globalCamera.transition.isActive = false;
     astronautCamera.transition.isActive = false;
@@ -368,11 +406,9 @@ void initCamera() {
     temp2.SetAngle(0, CVector(0, 1, 0));
 
     // 同步相机初始方向（注意乘法顺序）
-    astronautCamera.orientation = myShip.orientation;
+    astronautCamera.orientation = CQuaternion(1,0,0,0);
     astronautCamera.Update();
-    astronautCamera.orientation = temp2 * myShip.orientation;
-    astronautCamera.Update();
-    shipCamera.orientation =  myShip.orientation;
+    shipCamera.orientation = CQuaternion(1, 0, 0, 0);
     shipCamera.Update();
 
 
@@ -383,6 +419,8 @@ void initCamera() {
     g_lastCamUp = globalCamera.GetUpDir();
     g_lastCamSpeed = globalCamera.moveSpeed;
     g_lastCamMode = globalCamera.currentMode;
+
+
 
 
 }

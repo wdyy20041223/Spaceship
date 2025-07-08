@@ -30,6 +30,30 @@ void initAstronaut() {
     astronaut.legTexture = LoadTexture("textures/astronaut_leg.jpg");
 }
 
+void calculatehead() {
+    float aa = 0.03;
+
+
+    // 1. 获取飞船的变换矩阵（基于四元数）
+    transMat1.SetTrans(myShip.position);
+    CMatrix shipRotMat = myShip.orientation.ToMatrix(); // 从四元数生成旋转矩阵
+
+    // 组合飞船的平移和旋转
+    finalMat = transMat1 * shipRotMat; // 顺序：先平移，再旋转
+
+    transMat1.SetTrans(astronaut.position);
+    rotateMat1.SetRotate(astronaut.allAngle.h, CVector(0, 1, 0));
+    scaleMat1.SetScale(CVector(0.2 * aa, 0.2 * aa, 0.2 * aa));
+    finalMat = finalMat * transMat1 * rotateMat1 * scaleMat1;
+
+    CVector headPosition = CVector(
+        finalMat.m03 + 2.2 * finalMat.m01,  // X分量：平移X + 2.2*Y轴X方向
+        finalMat.m13 + 2.2 * finalMat.m11,  // Y分量：平移Y + 2.2*Y轴Y方向
+        finalMat.m23 + 2.2 * finalMat.m21   // Z分量：平移Z + 2.2*Y轴Z方向
+    );
+    astronaut.head = headPosition;
+}
+
 void drawAstronaut() {
     // 清空之前的包围盒
     astronaut.collisionBoxes.clear();
@@ -380,6 +404,72 @@ void DrawAABB(const AABB& box, char category) {
     glVertex3f(box.pos[7].x, box.pos[7].y, box.pos[7].z);
     glVertex3f(box.pos[5].x, box.pos[5].y, box.pos[5].z);
 
+    glEnd();
+
+    // 恢复状态
+    glPopMatrix();
+    glPopAttrib();
+}
+
+void DrawAABB2(const AABB& box, char category) {
+    glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT | GL_LINE_BIT);
+    glPushMatrix();
+
+    // 应用世界变换矩阵
+    glMultMatrixf(box.worldTransform);
+    glScalef(1.01f, 1.01f, 1.01f);
+
+    // 禁用光照和纹理
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+
+    // 设置线框模式
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glLineWidth(2.0f);
+
+    // 根据类别设置颜色
+    if (category == 'a')
+        glColor3f(1.0f, 1.0f, 0.0f);
+    else if (category == 's')
+        glColor3f(0.0f, 0.0f, 1.0f);
+
+    // 绘制包围盒
+    glBegin(GL_QUADS);
+    // 前面
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+
+    // 后面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+
+    // 上面
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+
+    // 下面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+
+    // 左面
+    glVertex3f(box.min.x, box.min.y, box.min.z);
+    glVertex3f(box.min.x, box.min.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.max.z);
+    glVertex3f(box.min.x, box.max.y, box.min.z);
+
+    // 右面
+    glVertex3f(box.max.x, box.min.y, box.max.z);
+    glVertex3f(box.max.x, box.min.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.min.z);
+    glVertex3f(box.max.x, box.max.y, box.max.z);
     glEnd();
 
     // 恢复状态

@@ -24,25 +24,63 @@ extern CVector deltaLight;
 extern std::vector<std::pair<AABB, char>> g_debugAABBs;
 extern cinfo cInfo[2];
 
+// 简洁版相机可视化
+void DrawCameraCoord(const Camera& cam, const CVector& color, const char* name) {
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glDisable(GL_LIGHTING);
+
+    // 获取方向向量
+    CVector pos = cam.position;
+    CVector forward = cam.GetForwardDir();
+    CVector up = cam.GetUpDir();
+    CVector right = cam.GetRightDir();
+
+    // 设置线宽
+    glLineWidth(1.5f);
+
+    // 绘制前方向（蓝色细线）
+    glColor3f(0.0f, 0.0f, 1.0f); // 蓝色
+    glBegin(GL_LINES);
+    glVertex3f(pos.x, pos.y, pos.z);
+    glVertex3f(pos.x + forward.x * 0.5f, pos.y + forward.y * 0.5f, pos.z + forward.z * 0.5f);
+    glEnd();
+
+    // 绘制上方向（绿色细线）
+    glColor3f(0.0f, 1.0f, 0.0f); // 绿色
+    glBegin(GL_LINES);
+    glVertex3f(pos.x, pos.y, pos.z);
+    glVertex3f(pos.x + up.x * 0.4f, pos.y + up.y * 0.4f, pos.z + up.z * 0.4f);
+    glEnd();
+
+    // 绘制右方向（红色细线）
+    glColor3f(1.0f, 0.0f, 0.0f); // 红色
+    glBegin(GL_LINES);
+    glVertex3f(pos.x, pos.y, pos.z);
+    glVertex3f(pos.x + right.x * 0.4f, pos.y + right.y * 0.4f, pos.z + right.z * 0.4f);
+    glEnd();
+
+
+    glPopAttrib();
+}
 
 // 绘制所有包围盒的函数
 void DrawAllBoundingBoxes() {
-    //// 绘制飞船所有部分的包围盒
-    //for (const auto& box : myShip.collisionBoxes) {
-    //    DrawAABB(box, 's');
-    //}
-
-    //// 绘制宇航员所有部分的包围盒
-    //for (const auto& box : astronaut.collisionBoxes) {
-    //    DrawAABB(box, 'a');
-    //}
+    // 绘制飞船所有部分的包围盒
+    for (const auto& box : myShip.collisionBoxes) {
+        DrawAABB2(box, 's');
+    }
 
     // 绘制宇航员所有部分的包围盒
-    for (const auto& debugPair : g_debugAABBs) {
+    for (const auto& box : astronaut.collisionBoxes) {
+        DrawAABB2(box, 'a');
+    }
+
+    // 绘制宇航员所有部分的包围盒
+    /*for (const auto& debugPair : g_debugAABBs) {
         const AABB& box = debugPair.first;
         char category = debugPair.second;
         DrawAABB(box, category);
-    }
+    }*/
 
 }
 
@@ -51,24 +89,40 @@ void myDisplay() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); // 重置矩阵
 
-    //---------- 以下是新增/修改的关键部分 ----------
+    calculatehead();
+
     // 1. 先设置观察矩阵
     CVector pos, forward, up, target;
     CVector astronautPos, astronautForward, astronautUp, astronautTarget;
     CVector shipPos, shipForward, shipUp, shipTarget;
 
+    globalCamera.realOrientation = globalCamera.orientation;
+    globalCamera.Update();
+    astronautCamera.realOrientation = myShip.orientation * astronautCamera.orientation;
+    astronautCamera.Update();
+    shipCamera.realOrientation = myShip.orientation * shipCamera.orientation;
+    shipCamera.Update();
+
+    astronautCamera.origonPos = astronaut.head;
+    shipCamera.origonPos = myShip.position;
+
+    CVector tempa = astronautCamera.x * astronautCamera.GetRightDir() + astronautCamera.y * astronautCamera.GetUpDir() 
+        + astronautCamera.z * astronautCamera.GetForwardDir();
+    CVector temps = shipCamera.x * shipCamera.GetRightDir() + shipCamera.y * shipCamera.GetUpDir()
+        + shipCamera.z * shipCamera.GetForwardDir();
+
     //全局相机
-    globalCamera.position = globalCamera.origonPos;
+    globalCamera.position = globalCamera.origonPos + globalCamera.deltaPos;
     // 太空人视角
-    astronautForward = astronautCamera.GetForwardDir().Normalized();
-    astronautCamera.position = astronautCamera.origonPos - astronautForward * 0.025 + astronautCamera.deltaPos;
+    astronautForward = astronautCamera.GetForwardDir();
+    astronautCamera.position = astronautCamera.origonPos - astronautForward * 0.025 + astronautCamera.deltaPos + tempa;
     astronautPos = astronautCamera.position;
     astronautUp = astronautCamera.GetUpDir();
     astronautTarget = astronautPos + astronautForward;
     astronautCamera.moveSpeed = myShip.speedLen;
     // 飞船视角
-    shipForward = shipCamera.GetForwardDir().Normalized();
-    shipCamera.position = shipCamera.origonPos + shipForward * 0.248;
+    shipForward = shipCamera.GetForwardDir();
+    shipCamera.position = shipCamera.origonPos + shipForward * 0.248 + shipCamera.deltaPos + temps;
     shipPos = shipCamera.position ;
     shipUp = shipCamera.GetUpDir();
     shipTarget = shipPos + shipForward;
@@ -126,6 +180,9 @@ void myDisplay() {
 
     detectCollisions();
     DrawAllBoundingBoxes();
+
+    DrawCameraCoord(astronautCamera, CVector(0.0f, 1.0f, 1.0f), "Astronaut Camera");
+    DrawCameraCoord(shipCamera, CVector(0.8f, 0.0f, 1.0f), "Ship Camera");
 
 
     glMatrixMode(GL_PROJECTION);
@@ -199,7 +256,7 @@ void myDisplay() {
 }
 
 void myTimerFunc(int val) {
-    checkKeyStates();
+    
 
     float deltaTime = 33.0f / 1000.0f; // 33ms per frame
 
@@ -238,7 +295,9 @@ void myTimerFunc(int val) {
     autoShip();
     shipMove();
     planetRotation();
+
     myDisplay();
+    checkKeyStates();
     
     checkStar();
 

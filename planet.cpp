@@ -71,7 +71,7 @@ void drawPlanet() {
 
             planetCamera.origonPos = planet[i].centerPlace + CVector(0, 1, 0) * planet[i].r * 1.2;       
             CVector dir = -planetCamera.origonPos;
-            planetCamera.orientation = (-dir).ToEuler().ToQuaternion();
+            planetCamera.realOrientation = (-dir).ToEuler().ToQuaternion();
             planetCamera.position = planetCamera.origonPos;
 
 
