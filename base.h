@@ -6,9 +6,9 @@
 #include <random>
 #include <cmath>
 #include <stdexcept>
-#include <GL/freeglut.h>
 #include "CVector.h" 
 #include "global.h"
+#include "glut.h" 
 
 
 #define PI 3.1415926

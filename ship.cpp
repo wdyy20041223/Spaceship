@@ -821,7 +821,7 @@ void DrawWing(bool isRightWing, const CMatrix& shipTransform) {
     glMultMatrixf(wingTransform);
 
     AABB wingBox;
-    wingBox.partName = isRightWing ? "Right Wing" : "Left Wing";
+    wingBox.partName = isRightWing ? "Left Wing" : "Right Wing";
     wingBox.min = CVector(-0.5f, -0.5f, -0.5f);
     wingBox.max = CVector(0.5f, 0.5f, 0.5f);
     wingBox.worldTransform = shipTransform * wingTransform;

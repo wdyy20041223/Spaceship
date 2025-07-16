@@ -1,7 +1,7 @@
 // Astronaut.cpp
 #include "Astronaut.h"
 #include <GL/glew.h>      // OpenGL扩展
-#include <GL/glut.h>      // GLUT工具包
+#include "glut.h"   // GLUT工具包
 #include "CMatrix.h"
 #include "ship.h"
 #include "camera.h"
@@ -432,6 +432,8 @@ void DrawAABB2(const AABB& box, char category) {
         glColor3f(1.0f, 1.0f, 0.0f);
     else if (category == 's')
         glColor3f(0.0f, 0.0f, 1.0f);
+    else
+        glColor3f(0.0f, 1.0f, 0.0f);
 
     // 绘制包围盒
     glBegin(GL_QUADS);

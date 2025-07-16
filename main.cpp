@@ -9,7 +9,7 @@
 #include "keyboard.h"
 #include "Astronaut.h"
 #include <iostream>
-
+#define NDEBUG
 
 
 void SetRC();
@@ -23,6 +23,10 @@ extern bool ControlingGlobal;
 extern CVector deltaLight;
 extern std::vector<std::pair<AABB, char>> g_debugAABBs;
 extern cinfo cInfo[2];
+extern cinfo cInfo2[5];
+extern bool visible;
+extern ball planet[8];
+extern bool ControllingShip_camera, ControllingShip_ship, ControllingShip_astro;
 
 // 简洁版相机可视化
 void DrawCameraCoord(const Camera& cam, const CVector& color, const char* name) {
@@ -73,6 +77,10 @@ void DrawAllBoundingBoxes() {
     // 绘制宇航员所有部分的包围盒
     for (const auto& box : astronaut.collisionBoxes) {
         DrawAABB2(box, 'a');
+    }
+
+    for (int i = 0; i < 8; i++) {
+        DrawAABB2(planet[i].box, 'p');
     }
 
     // 绘制宇航员所有部分的包围盒
@@ -139,33 +147,17 @@ void myDisplay() {
         forward = globalCamera.GetForwardDir();
         up = globalCamera.GetUpDir();
         target = pos + forward;
-        for (int i = 0; i < 2; i++) {
-            cInfo[i].shipPart = "NULL";
-            cInfo[i].astroPart = "NULL";
-            cInfo[i].collisionPoint = CVector(0,0,0);
-        }
+
     }
     else if (astronautCamera.online) {
         pos = astronautPos;
         up = astronautUp;
         target = astronautTarget;
-        if (!ControllingAstronaut) {
-            for (int i = 0; i < 2; i++) {
-                cInfo[i].shipPart = "NULL";
-                cInfo[i].astroPart = "NULL";
-                cInfo[i].collisionPoint = CVector(0, 0, 0);
-            }
-        }
     }
     else {
         pos = shipPos;
         up = shipUp;
         target = shipTarget;
-        for (int i = 0; i < 2; i++) {
-            cInfo[i].shipPart = "NULL";
-            cInfo[i].astroPart = "NULL";
-            cInfo[i].collisionPoint = CVector(0, 0, 0);
-        }
     }
 
     gluLookAt(pos.x, pos.y, pos.z,
@@ -179,10 +171,13 @@ void myDisplay() {
     drawStars();
 
     detectCollisions();
-    DrawAllBoundingBoxes();
+    if (visible) {
+        DrawAllBoundingBoxes();
 
-    DrawCameraCoord(astronautCamera, CVector(0.0f, 1.0f, 1.0f), "Astronaut Camera");
-    DrawCameraCoord(shipCamera, CVector(0.8f, 0.0f, 1.0f), "Ship Camera");
+        DrawCameraCoord(astronautCamera, CVector(0.0f, 1.0f, 1.0f), "Astronaut Camera");
+        DrawCameraCoord(shipCamera, CVector(0.8f, 0.0f, 1.0f), "Ship Camera");
+    }
+    
 
 
     glMatrixMode(GL_PROJECTION);
@@ -314,8 +309,8 @@ void myTimerFunc(int val) {
 
 int main(int argc, char* argv[]) {
 
-    testfunc();
-    CalculateTest();
+    //testfunc();
+    //CalculateTest();
 
     glutInit(&argc, argv);// 初始化 GLUT
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);// 设置显示模式为双缓冲和 RGB 颜色模式
@@ -353,6 +348,19 @@ int main(int argc, char* argv[]) {
 }
 
 void init() {
+    for (int i = 0; i < 2; i++) {
+        cInfo[i].shipPart = "NULL";
+        cInfo[i].astroPart = "NULL";
+        cInfo[i].collisionPoint = CVector(0, 0, 0);
+    }
+    for (int i = 0; i < 5; i++) {
+        cInfo2[i].shipPart = "NULL";
+        cInfo2[i].astroPart = "NULL";
+        cInfo2[i].collisionPoint = CVector(0, 0, 0);
+    }
+    ControllingShip_ship = true;
+    ControllingShip_camera = false;
+    ControllingShip_astro = false;
     //myShip.direction = CVector(0, 1, 0);
     // 
     // 添加全局环境光设置

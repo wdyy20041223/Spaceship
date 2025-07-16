@@ -4,19 +4,20 @@
 #include "ship.h"
 #include "global.h"
 #include "CMatrix.h" 
-#include <GL/glut.h>
+
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define PLANETNUM 8
 #define A2R(x) (x/180.0*PI) //角度转弧度
 
 bool g_wireframe = false;
-ball planet[PLANETNUM];//struct ball类型
+ball planet[8];//struct ball类型
 float radiusCorrection = 1.2, distanceCorrection = 1.1, rotationCorrection = 1.1;//一些参数的修正系数
 ball* selectedPlanet = nullptr; // 当前选中的行星
 extern Camera planetCamera;
+extern ball planet[8];
 
 GLuint LoadTexture(const char* path) {
     int width, height, channels;
@@ -58,7 +59,8 @@ GLuint LoadTexture(const char* path) {
 }
 
 void drawPlanet() {
-    for (int i = 0; i < PLANETNUM; i++) {
+
+    for (int i = 0; i < 8; i++) {
         drawTrack(planet[i]);
         drawBall(planet[i]);
         if (planet[i].selected) {//绘制选择效果
@@ -103,7 +105,7 @@ void mouseClick(int button, int state, int x, int y) {
         CVector rayDir(endX - startX, endY - startY, endZ - startZ);
         rayDir.Normalize();
 
-        for (int i = 0; i < PLANETNUM;i++) { // 行星数组
+        for (int i = 0; i < 8;i++) { // 行星数组
             CVector toCenter = planet[i].centerPlace - CVector(startX, startY, startZ);
             float t = toCenter.dotMul(rayDir);
             if (t < 0) continue; // 射线反向
@@ -147,7 +149,7 @@ void initPlanet() {
     strcpy_s(planet[7].name, "moon");
     planet[7].textureID = LoadTexture("textures/moon.jpg");
 
-    for (int i = 0; i < PLANETNUM; i++) {
+    for (int i = 0; i < 8; i++) {
         planet[i].index = i;
     }
 
@@ -233,6 +235,8 @@ void initPlanet() {
     strcpy_s(planet[7].name, "moon");
     initBall(planet[7]);
 
+
+
 }
 
 void drawRing(ball saturn) {
@@ -295,43 +299,52 @@ void drawRing(ball saturn) {
 }
 
 void initBall(ball& ball0) {
-    int temp = 4;
-    for (int i = -90; i <= 90; i += temp)
+    int temp1 = 4;
+    int temp2 = 6;
+    for (int i = -90; i <= 90; i += temp1)
     {
-        for (int j = 0; j <= 360; j += temp)
+        for (int j = 0; j <= 360; j += temp2)
         {
             float r = ball0.r * cos(A2R(i));
-            ball0.pointPlace[(90 + i) / temp][j / temp].x = r * sin(A2R(j));
-            ball0.pointPlace[(90 + i) / temp][j / temp].y = r * cos(A2R(j));
-            ball0.pointPlace[(90 + i) / temp][j / temp].z = ball0.r * sin(A2R(i));
+            ball0.pointPlace[(90 + i) / temp1][j / temp2].x = r * sin(A2R(j));
+            ball0.pointPlace[(90 + i) / temp1][j / temp2].y = r * cos(A2R(j));
+            ball0.pointPlace[(90 + i) / temp1][j / temp2].z = ball0.r * sin(A2R(i));
 
             float u = (j) / 360.0f;
             float v = (i + 90.0f) / 180.0f;
-            ball0.texCoords[(90 + i) / temp][j / temp] = CVector2(u, v);
+            ball0.texCoords[(90 + i) / temp1][j / temp2] = CVector2(u, v);
 
             // 计算法线（添加到现有循环内）
-            ball0.normalVectors[(90 + i) / temp][j / temp] = CVector(
-                ball0.pointPlace[(90 + i) / temp][j / temp].x ,
-                ball0.pointPlace[(90 + i) / temp][j / temp].y,
-                ball0.pointPlace[(90 + i) / temp][j / temp].z 
+            ball0.normalVectors[(90 + i) / temp1][j / temp2] = CVector(
+                ball0.pointPlace[(90 + i) / temp1][j / temp2].x ,
+                ball0.pointPlace[(90 + i) / temp1][j / temp2].y,
+                ball0.pointPlace[(90 + i) / temp1][j / temp2].z 
             ).Normalized();
         }
     }
-    ball0.pointPlace[60][120] = ball0.pointPlace[0][0]; //使用CVerter类的等于
+    ball0.pointPlace[60][60] = ball0.pointPlace[0][0]; 
 
     for (int j = 0; j < 361; j++) {//初始化轨迹
         ball0.orbitPoints[j] = ball0.centerPlace;
     }
 }
 
-void drawBall(ball ball0) {
+void drawBall(ball& ball0) {
     glPushMatrix();
     transMat1.SetTrans(CVector(ball0.orbitPoints[ball0.index].x,
         ball0.orbitPoints[ball0.index].y,
         ball0.orbitPoints[ball0.index].z));
     rotateMat1.SetRotate(33.5, CVector(0, 0, 1));
     rotateMat2.SetRotate(ball0.rotationAngle, CVector(0, 1, 0));
-    glMultMatrixf(transMat1 * rotateMat1 * rotateMat2);
+    CMatrix finalMat = transMat1 * rotateMat1 * rotateMat2;
+    glMultMatrixf(finalMat);
+
+    ball0.r = ball0.r * 2;
+    ball0.box.partName = ball0.name;
+    ball0.box.min = CVector(-ball0.r / 2, -ball0.r / 2, -ball0.r / 2); 
+    ball0.box.max = CVector(ball0.r / 2, ball0.r / 2, ball0.r / 2);
+    ball0.box.worldTransform = finalMat;
+    ball0.r = ball0.r / 2;
 
     // 启用纹理和设置
     glEnable(GL_TEXTURE_2D);
@@ -368,7 +381,7 @@ void drawBall(ball ball0) {
     // 绘制四边形带，添加法线
     for (int i = 0; i < 60; i++) {
         glBegin(GL_QUAD_STRIP);
-        for (int j = 0; j < 121; j++) {
+        for (int j = 0; j < 61; j++) {
             glTexCoord2fv(ball0.texCoords[i][j]);
             glNormal3fv(ball0.normalVectors[i][j]);
             glVertex3fv(ball0.pointPlace[i][j]);
@@ -393,7 +406,7 @@ void drawBall(ball ball0) {
 }
 
 void planetRotation() {//公转
-    for (int i = 0; i < PLANETNUM; i++) {
+    for (int i = 0; i < 8; i++) {
         planet[i].rotationAngle += planet[i].rotationSpeed;
         planet[i].orbitAngle += planet[i].orbitSpeed;
         if (planet[i].orbitAngle > 360)

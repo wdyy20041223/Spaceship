@@ -9,6 +9,7 @@ CMatrix transMat1, transMat2, rotateMat1, rotateMat2, scaleMat1, scaleMat2, fina
 Astronaut astronaut;
 Camera globalCamera, astronautCamera, tempCamera,shipCamera,planetCamera;
 bool ControlingGlobal, ControllingShip, ControllingAstronaut = true, ControllingShip_camera = true;
+bool ControllingShip_ship = false, ControllingShip_astro = false;
 
 CVector g_lastCamPos;
 CEuler g_lastCamEuler;
@@ -18,3 +19,5 @@ float g_lastCamSpeed = 0;
 Camera::ControlMode g_lastCamMode = Camera::EULER;
 bool needGuide = true;
 CVector deltaLight;
+bool visible;
+cinfo Cinfo2;

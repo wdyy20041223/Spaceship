@@ -6,12 +6,13 @@
 
 
 #include "CVector.h" 
+#include "AABB.h" 
 class CMatrix;
 
 typedef struct ball {
     char name[10];
     CVector centerPlace;//行星中心
-    CVector pointPlace[61][121];
+    CVector pointPlace[61][61];
     CVector color;
     CVector speed;
     CVector deltaPlace;
@@ -32,9 +33,11 @@ typedef struct ball {
 
     GLuint ringTextureID;
     GLuint textureID;       // 纹理标识符
-    CVector2 texCoords[46][121]; // 纹理坐标数组 [纬度][经度]
+    CVector2 texCoords[46][61]; // 纹理坐标数组 [纬度][经度]
 
-    CVector normalVectors[61][121]; // 存储每个顶点的法线
+    CVector normalVectors[61][61]; // 存储每个顶点的法线
+    AABB box;
+
 };
 
 GLuint LoadTexture(const char* path);
@@ -45,7 +48,7 @@ void initBall(ball& ball0);
 void planetRotation();
 void drawPlanet();
 void drawTrack(ball ball0);
-void drawBall(ball ball0);
+void drawBall(ball& ball0);
 void mouseClick(int button, int state, int x, int y);
 
 

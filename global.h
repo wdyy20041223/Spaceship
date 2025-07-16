@@ -18,8 +18,11 @@ extern CVector g_lastCamForward;
 extern CVector g_lastCamUp;
 extern float g_lastCamSpeed;
 extern Camera::ControlMode g_lastCamMode;
-extern bool needGuide , ControllingShip_camera;
+extern bool needGuide , ControllingShip_camera, ControllingShip_ship, ControllingShip_astro;
 extern CVector deltaLight;
+extern bool visible;
+extern cinfo Cinfo2;
+
 
 
 

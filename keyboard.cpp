@@ -3,7 +3,7 @@
 #include "ship.h"        // 包含飞船相关定义
 #include "planet.h"      // 包含星球相关定义
 #include "Camera.h"
-#include <GL/glut.h>
+#include "glut.h" 
 #include <iostream>
 #include "global.h"
 
@@ -20,14 +20,18 @@ bool specialKeyPressed[256] = { false };
 
 cinfo cInfo[2];
 static int cInfoIndex = 0;
+cinfo cInfo2[5];
+static int cInfoIndex2 = 0;
 
 // 外部变量声明（在其它模块中定义）
 extern ship myShip;
 extern ball* selectedPlanet;
 extern bool g_wireframe;
 extern Camera globalCamera, astronautCamera,shipCamera,planetCamera;
-extern bool ControlingGlobal, ControllingShip, ControllingAstronaut,needGuide, ControllingShip_camera;
+extern bool ControlingGlobal, ControllingShip, ControllingAstronaut,needGuide, ControllingShip_camera,ControllingShip_ship, ControllingShip_astro;
 extern CVector deltaLight;
+extern bool visible;
+extern ball planet[8];
 // 普通按键按下回调
 
 struct AstronautState {
@@ -212,7 +216,7 @@ CVector calculateCollisionPoint(const AABB& shipBox, const AABB& astroBox) {
     return CVector(x, y, z);
 }
 
-// 检测飞船和宇航员的碰撞
+// 检测碰撞
 bool detectCollisions() {
     static int tempC = 0;
     g_debugAABBs.clear();  // 清除上一帧的调试信息
@@ -250,6 +254,48 @@ bool detectCollisions() {
                 cInfo[i].collisionPoint = CVector(0, 0, 0);
             }
             tempC = 0;
+        }
+    }
+    return collisionDetected;
+}
+
+// 检测碰撞
+bool detectCollisions2() {
+    static int tempC2 = 0;
+
+    bool collisionDetected = false;
+
+    for (auto& shipLocalBox : myShip.collisionBoxes) {
+        if (shipLocalBox.partName == "Ship Inner Body (Right)"|| shipLocalBox.partName == "Ship Inner Body (Left)") continue;
+        AABB shipWorldBox = transformAABB(shipLocalBox);
+
+        for (int i = 0; i < 8; i++) {
+
+            AABB astroWorldBox = transformAABB(planet[i].box);
+
+            if (CheckOBBCollision(shipWorldBox, astroWorldBox)) {
+
+                CVector collisionPoint = calculateCollisionPoint(shipWorldBox, astroWorldBox);
+                cInfo2[cInfoIndex2].astroPart = astroWorldBox.partName;
+                cInfo2[cInfoIndex2].shipPart = shipWorldBox.partName;
+                cInfo2[cInfoIndex2].collisionPoint = collisionPoint;
+                cInfoIndex2 = (cInfoIndex2 + 1) % 5;
+
+                collisionDetected = true;
+
+            }
+        }          
+    }
+
+    if (!collisionDetected) {
+        tempC2++;
+        if (tempC2 == 150) {
+            for (int i = 0; i < 5; i++) {
+                cInfo2[i].shipPart = "NULL";
+                cInfo2[i].astroPart = "NULL";
+                cInfo2[i].collisionPoint = CVector(0, 0, 0);
+            }
+            tempC2 = 0;
         }
     }
     return collisionDetected;
@@ -340,7 +386,7 @@ void keyboardDown(unsigned char key, int x, int y) {
             else if (astronautCamera.online)
                 astronautCamera.StartTransitionTo(shipCamera, time);
             break;
-        case 'l': // 'l'键
+        case 'k': // 'l'键
             if (!globalCamera.online || myShip.targetBall == nullptr) { break; }
                 globalCamera.StartTransitionTo(planetCamera, time); 
                break;
@@ -365,15 +411,28 @@ void specialDown(int key, int x, int y) {
         glPolygonMode(GL_FRONT_AND_BACK, g_wireframe ? GL_LINE : GL_FILL);
         glutPostRedisplay();
         break;
-    case GLUT_KEY_F2:  
+    case GLUT_KEY_F3:  
         if (globalCamera.online)
             ControllingShip = !ControllingShip;
         else if (astronautCamera.online)
             ControllingAstronaut = !ControllingAstronaut;
         else if (shipCamera.online)
-            ControllingShip_camera = !ControllingShip_camera;
+            if (ControllingShip_camera) {
+                ControllingShip_camera = !ControllingShip_camera;
+                ControllingShip_ship = !ControllingShip_ship;
+            }
+            else if (ControllingShip_ship) {
+                    ControllingShip_astro = !ControllingShip_astro;
+                    ControllingShip_ship = !ControllingShip_ship;
+                }
+                else {
+                    ControllingShip_astro = !ControllingShip_astro;
+                    ControllingShip_camera = !ControllingShip_camera;
+                }    
+            
         break;
-    
+    case GLUT_KEY_F2:
+        visible = !visible;
     }
     
         
@@ -385,6 +444,8 @@ void specialUp(int key, int x, int y) {
 }
 // 每帧检测按键状态
 void checkKeyStates() {
+    detectCollisions2();
+
     deltaLight = CVector(0, 0, 0);
     if (globalCamera.transition.isActive || astronautCamera.transition.isActive || shipCamera.transition.isActive) {
         return;
@@ -426,7 +487,7 @@ void checkKeyStates() {
     }
     
     if (shipCamera.online) {
-        if (!ControllingShip_camera) {
+        if (ControllingShip_ship) {
             if (keyPressed[CAMERA_MOVEUP]) { shipCamera.MoveUp(); }
             if (keyPressed[CAMERA_MOVEDOWN]) { shipCamera.MoveDown(); }
             if (keyPressed[CAMERA_MOVELEFT]) { shipCamera.MoveLeft(); }
@@ -454,8 +515,7 @@ void checkKeyStates() {
         else {
             //控制飞船
             if ((!myShip.autoPilot||myShip.targetBall == nullptr)&&(!shipCamera.online|| shipCamera.online && ControllingShip_camera)) {
-                // 方向控制
-                // 修改原有欧拉角操作为四元数旋转
+
                 if (keyPressed[KEY_UP]) {
                     ShipPitch(myShip.angleStep); 
                 }
@@ -477,8 +537,8 @@ void checkKeyStates() {
             }
         }       
     }
-    else {
-        if (ControllingAstronaut) {
+    if(shipCamera.online && ControllingShip_astro||!(ControlingGlobal || shipCamera.online)) {
+        if (ControllingAstronaut||ControllingShip_astro) {
             AstronautState initialState = {
                 astronaut.position,
                 astronautCamera.origonPos,
