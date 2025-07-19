@@ -27,6 +27,7 @@ extern cinfo cInfo2[5];
 extern bool visible;
 extern ball planet[8];
 extern bool ControllingShip_camera, ControllingShip_ship, ControllingShip_astro;
+extern ball collosionPlanet;
 
 // 简洁版相机可视化
 void DrawCameraCoord(const Camera& cam, const CVector& color, const char* name) {
@@ -67,8 +68,54 @@ void DrawCameraCoord(const Camera& cam, const CVector& color, const char* name) 
     glPopAttrib();
 }
 
+void drawSphere(float radius, const CVector& center) {
+    glPushMatrix();
+    glPushAttrib(GL_ALL_ATTRIB_BITS); // 保存当前所有OpenGL状态
+
+    // 应用变换（将球体放置在指定位置）
+    glTranslatef(center.x, center.y, center.z);
+
+    // 设置材质属性 - 红色半透明
+    GLfloat mat_ambient[] = { 0.8f, 0.0f, 0.0f, 0.5f };
+    GLfloat mat_diffuse[] = { 0.8f, 0.0f, 0.0f, 0.5f };
+    GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 0.5f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 100.0f);
+
+    // 启用混合以实现透明度
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // 绘制球体内部（实体半透明）
+    glColor4f(1.0f, 0.0f, 0.0f, 0.3f); // RGBA - 红色半透明
+    glutSolidSphere(radius, 32, 32);   // 32切片，32堆叠
+
+    // 禁用混合和光照以绘制线框
+    glDisable(GL_BLEND);
+    glDisable(GL_LIGHTING);
+
+    // 绘制球体线框
+    glColor3f(1.0f, 0.0f, 0.0f); // RGB - 红色
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glutWireSphere(radius, 16, 16); // 16切片，16堆叠
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // 恢复OpenGL状态
+    glPopAttrib();
+    glPopMatrix();
+}
+
 // 绘制所有包围盒的函数
 void DrawAllBoundingBoxes() {
+    // 先绘制相机可视化（确保在最上层）
+    if (visible) {
+        DrawCameraCoord(astronautCamera, CVector(0.0f, 1.0f, 1.0f), "Astronaut Camera");
+        DrawCameraCoord(shipCamera, CVector(0.8f, 0.0f, 1.0f), "Ship Camera");
+    }
+
+    // 再绘制包围盒和球体
     // 绘制飞船所有部分的包围盒
     for (const auto& box : myShip.collisionBoxes) {
         DrawAABB2(box, 's');
@@ -83,13 +130,10 @@ void DrawAllBoundingBoxes() {
         DrawAABB2(planet[i].box, 'p');
     }
 
-    // 绘制宇航员所有部分的包围盒
-    /*for (const auto& debugPair : g_debugAABBs) {
-        const AABB& box = debugPair.first;
-        char category = debugPair.second;
-        DrawAABB(box, category);
-    }*/
-
+    for (int i = 0; i < 8; i++) {
+        drawSphere(planet[i].r * 1.01, planet[i].centerPlace);
+    }
+    drawSphere(0.25, myShip.position);
 }
 
 void myDisplay() {
@@ -348,6 +392,9 @@ int main(int argc, char* argv[]) {
 }
 
 void init() {
+    ball test;
+    test.index = 10;
+    collosionPlanet = test;
     for (int i = 0; i < 2; i++) {
         cInfo[i].shipPart = "NULL";
         cInfo[i].astroPart = "NULL";
@@ -358,8 +405,8 @@ void init() {
         cInfo2[i].astroPart = "NULL";
         cInfo2[i].collisionPoint = CVector(0, 0, 0);
     }
-    ControllingShip_ship = true;
-    ControllingShip_camera = false;
+    ControllingShip_ship = false;
+    ControllingShip_camera = true;
     ControllingShip_astro = false;
     //myShip.direction = CVector(0, 1, 0);
     // 

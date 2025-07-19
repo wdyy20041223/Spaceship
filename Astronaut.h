@@ -31,6 +31,15 @@ struct Astronaut {
     GLuint bodyTexture;
     GLuint armTexture;
     GLuint legTexture;
+    GLuint faceTexture;
+    GLuint hairTexture;
+
+    GLuint eyeTexture;
+    GLuint noseTexture;
+    GLuint mouthTexture;
+
+    GLuint packageTexture;
+    GLuint beforeTexture;
 
     std::vector<AABB> collisionBoxes; // ´æ´¢°üÎ§ºÐÐÅÏ¢
     

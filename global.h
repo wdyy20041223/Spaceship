@@ -22,7 +22,9 @@ extern bool needGuide , ControllingShip_camera, ControllingShip_ship, Controllin
 extern CVector deltaLight;
 extern bool visible;
 extern cinfo Cinfo2;
-
+extern float collisionTime;
+extern ball collosionPlanet;
+extern bool lastcollision;
 
 
 

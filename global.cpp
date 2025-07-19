@@ -21,3 +21,6 @@ bool needGuide = true;
 CVector deltaLight;
 bool visible;
 cinfo Cinfo2;
+float collisionTime;
+ball collosionPlanet;
+bool lastcollision;

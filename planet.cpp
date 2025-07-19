@@ -21,40 +21,33 @@ extern ball planet[8];
 
 GLuint LoadTexture(const char* path) {
     int width, height, channels;
-
-    // 强制加载为4通道（兼容PNG的Alpha通道）
-    unsigned char* data = stbi_load(path, &width, &height, &channels, 4);
+    unsigned char* data = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
     if (!data || width <= 0 || height <= 0) {
         printf("加载纹理失败: %s\n", path);
         return 0;
     }
 
-    // 统一转换为RGBA格式
-    GLenum format = GL_RGBA;
-    GLint internalFormat = GL_RGBA8;  // 修正内部格式
-
     GLuint textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
 
-    // 关键修复1：设置1字节对齐
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    // 修正：使用标准RGBA格式，移除错误设置
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-    // 关键修复2：使用正确的内部格式
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat,
-        width, height, 0, format,
-        GL_UNSIGNED_BYTE, data);
+    // 生成mipmap
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // 统一设置混合参数（无论是否有Alpha通道）
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // 设置纹理参数
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // 延迟释放数据直到确认成功
-    stbi_image_free(data);
+    // 移除错误的SWIZZLE设置
+    // 正确设置环境模式为MODULATE（默认值）
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+    stbi_image_free(data);
     return textureID;
 }
 

@@ -20,8 +20,7 @@ bool specialKeyPressed[256] = { false };
 
 cinfo cInfo[2];
 static int cInfoIndex = 0;
-cinfo cInfo2[5];
-static int cInfoIndex2 = 0;
+cinfo cInfo2[1];
 
 // 外部变量声明（在其它模块中定义）
 extern ship myShip;
@@ -32,7 +31,12 @@ extern bool ControlingGlobal, ControllingShip, ControllingAstronaut,needGuide, C
 extern CVector deltaLight;
 extern bool visible;
 extern ball planet[8];
+extern float collisionTime;
+extern ball collosionPlanet;
+extern bool lastcollision;
 // 普通按键按下回调
+
+static float dist2;
 
 struct AstronautState {
     CVector position;
@@ -258,48 +262,217 @@ bool detectCollisions() {
     }
     return collisionDetected;
 }
+bool checkBoundingBall(CVector pos1,float r1, CVector pos2, float r2) {
+    dist2 = pos1.distanceTo(pos2);
+    return dist2 > r1 + r2 ? false : true;
+}
 
 // 检测碰撞
-bool detectCollisions2() {
+bool detectCollisions2(float time) {
     static int tempC2 = 0;
-
-    bool collisionDetected = false;
-
-    for (auto& shipLocalBox : myShip.collisionBoxes) {
-        if (shipLocalBox.partName == "Ship Inner Body (Right)"|| shipLocalBox.partName == "Ship Inner Body (Left)") continue;
-        AABB shipWorldBox = transformAABB(shipLocalBox);
-
-        for (int i = 0; i < 8; i++) {
-
-            AABB astroWorldBox = transformAABB(planet[i].box);
-
-            if (CheckOBBCollision(shipWorldBox, astroWorldBox)) {
-
-                CVector collisionPoint = calculateCollisionPoint(shipWorldBox, astroWorldBox);
-                cInfo2[cInfoIndex2].astroPart = astroWorldBox.partName;
-                cInfo2[cInfoIndex2].shipPart = shipWorldBox.partName;
-                cInfo2[cInfoIndex2].collisionPoint = collisionPoint;
-                cInfoIndex2 = (cInfoIndex2 + 1) % 5;
-
-                collisionDetected = true;
-
-            }
-        }          
-    }
-
-    if (!collisionDetected) {
-        tempC2++;
-        if (tempC2 == 150) {
-            for (int i = 0; i < 5; i++) {
-                cInfo2[i].shipPart = "NULL";
-                cInfo2[i].astroPart = "NULL";
-                cInfo2[i].collisionPoint = CVector(0, 0, 0);
-            }
-            tempC2 = 0;
+    float dist = 200000;
+    bool collisionDetected = false;   
+    CVector shipPos = myShip.position + time * myShip.speed;
+    for (int i = 0; i < 8; i++) {
+        if (checkBoundingBall(shipPos, 0.25,planet[i].centerPlace ,planet[i].r) && dist2 <dist) {
+            dist = dist2;
+            cInfo2[0].astroPart = planet[i].name;
+            collisionDetected = true;
+            collisionTime = time / 30 * 1.5;
+            collosionPlanet = planet[i];
+            lastcollision = true;
         }
-    }
+    }           
     return collisionDetected;
 }
+
+// 每帧检测按键状态
+void checkKeyStates() {
+    lastcollision = false;
+    collisionTime = 0;
+    static ball test;
+    test.index = 10;
+    collosionPlanet = test;
+    myShip.speed = myShip.speedLen * myShip.direction;
+    for (int i = 0; i < 30 * 100; i += 1) {
+        if (detectCollisions2(i) && i == 0) {
+            collisionTime = 0;
+        }
+        if (collisionTime != 0 && i != 0) break;
+    }
+
+    deltaLight = CVector(0, 0, 0);
+    if (globalCamera.transition.isActive || astronautCamera.transition.isActive || shipCamera.transition.isActive) {
+        return;
+    }
+    globalCamera.moveSpeed = 0;
+
+    if (globalCamera.online) {
+        if (keyPressed[CAMERA_UP]) globalCamera.RotatePitch(1.0f);
+        if (keyPressed[CAMERA_DOWN]) globalCamera.RotatePitch(-1.0f);
+        if (keyPressed[CAMERA_LEFT]) globalCamera.RotateYaw(1.0f);
+        if (keyPressed[CAMERA_RIGHT]) globalCamera.RotateYaw(-1.0f);
+        if (keyPressed[CAMERA_ROLL_LEFT]) globalCamera.RotateRoll(-1.0f);
+        if (keyPressed[CAMERA_ROLL_RIGHT]) globalCamera.RotateRoll(1.0f);
+
+    }
+    else if (astronautCamera.online) {
+        if (keyPressed[CAMERA_UP]) astronautCamera.RotatePitch(2.0f);
+        if (keyPressed[CAMERA_DOWN]) astronautCamera.RotatePitch(-2.0f);
+        if (keyPressed[CAMERA_LEFT]) astronautCamera.RotateYaw(2.0f);
+        if (keyPressed[CAMERA_RIGHT]) astronautCamera.RotateYaw(-2.0f);
+        if (keyPressed[CAMERA_ROLL_LEFT]) astronautCamera.RotateRoll(-2.0f);
+        if (keyPressed[CAMERA_ROLL_RIGHT]) astronautCamera.RotateRoll(2.0f);
+    }
+    else {
+        float delta = 0.5f;
+        if (keyPressed[CAMERA_UP]) shipCamera.RotatePitch(delta);
+        if (keyPressed[CAMERA_DOWN]) shipCamera.RotatePitch(-delta);
+        if (keyPressed[CAMERA_LEFT]) shipCamera.RotateYaw(delta);
+        if (keyPressed[CAMERA_RIGHT]) shipCamera.RotateYaw(-delta);
+        if (keyPressed[CAMERA_ROLL_LEFT]) shipCamera.RotateRoll(-delta);
+        if (keyPressed[CAMERA_ROLL_RIGHT]) shipCamera.RotateRoll(delta);
+    }
+    // 速度控制
+    if (keyPressed[SPEED_UP]) { myShip.speedLen += myShip.speedStep; }
+    if (keyPressed[SPEED_DOWN]) { myShip.speedLen -= myShip.speedStep; }
+    // 速度限制
+    if (myShip.speedLen < 0) {
+        myShip.speedLen = 0;
+    }
+
+    if (shipCamera.online) {
+        if (ControllingShip_ship) {
+            if (keyPressed[CAMERA_MOVEUP]) { shipCamera.MoveUp(); }
+            if (keyPressed[CAMERA_MOVEDOWN]) { shipCamera.MoveDown(); }
+            if (keyPressed[CAMERA_MOVELEFT]) { shipCamera.MoveLeft(); }
+            if (keyPressed[CAMERA_MOVERIGHT]) { shipCamera.MoveRight(); }
+            if (keyPressed[CAMERA_MOVEFRONT]) { shipCamera.MoveFront(); }
+            if (keyPressed[CAMERA_MOVEBACK]) { shipCamera.MoveBack(); }
+        }
+    }
+
+    if (ControlingGlobal || shipCamera.online) {
+        if (!ControllingShip && !shipCamera.online) {
+            {//控制全局相机
+                if (keyPressed[CAMERA_MOVEUP]) { globalCamera.moveSpeed = 0.04f; globalCamera.MoveUp(); }
+                if (keyPressed[CAMERA_MOVEDOWN]) { globalCamera.moveSpeed = 0.04f; globalCamera.MoveDown(); }
+                if (keyPressed[CAMERA_MOVELEFT]) { globalCamera.moveSpeed = 0.04f; globalCamera.MoveLeft(); }
+                if (keyPressed[CAMERA_MOVERIGHT]) { globalCamera.moveSpeed = 0.04f; globalCamera.MoveRight(); }
+                if (keyPressed[CAMERA_MOVEFRONT]) {
+                    globalCamera.moveSpeed = 0.04f; globalCamera.MoveFront();
+                    deltaLight = globalCamera.GetForwardDir() * globalCamera.moveSpeed;
+                }
+                if (keyPressed[CAMERA_MOVEBACK]) {
+                    globalCamera.moveSpeed = 0.04f; globalCamera.MoveBack();
+                    deltaLight = -globalCamera.GetForwardDir() * globalCamera.moveSpeed;
+                }
+            }
+        }
+        else {
+            //控制飞船
+            if ((!myShip.autoPilot || myShip.targetBall == nullptr) && (!shipCamera.online || shipCamera.online && ControllingShip_camera)) {
+
+                if (keyPressed[KEY_UP]) {
+                    ShipPitch(myShip.angleStep);
+                }
+                if (keyPressed[KEY_DOWN]) {
+                    ShipPitch(-myShip.angleStep);
+                }
+                if (keyPressed[KEY_LEFT]) {
+                    ShipYaw(+myShip.angleStep);
+                }
+                if (keyPressed[KEY_RIGHT]) {
+                    ShipYaw(-myShip.angleStep);
+                }
+                if (keyPressed[KEY_ROLL_LEFT]) {
+                    ShipRoll(+myShip.angleStep);
+                }
+                if (keyPressed[KEY_ROLL_RIGHT]) {
+                    ShipRoll(-myShip.angleStep);
+                }
+            }
+        }
+    }
+    if (shipCamera.online && ControllingShip_astro || !(ControlingGlobal || shipCamera.online)) {
+        if (ControllingAstronaut || ControllingShip_astro) {
+            AstronautState initialState = {
+                astronaut.position,
+                astronautCamera.origonPos,
+                astronautCamera.deltaPos,
+                astronaut.allAngle,
+                astronautCamera.orientation
+            };
+
+            // 保存到缓冲区
+            stateBuffer[currentStateIndex] = initialState;
+
+            //宇航员
+            if (keyPressed[KEY_ROLL_LEFT]) {
+                astronaut.position = astronaut.position + astronaut.direction * astronaut.speedLen;
+                //astronautCamera.deltaPos = astronautCamera.deltaPos + astronaut.finalDir * astronaut.speedLen;
+            }
+            if (keyPressed[KEY_ROLL_RIGHT]) {
+                astronaut.position = astronaut.position - astronaut.direction * astronaut.speedLen;
+                //astronautCamera.deltaPos = astronautCamera.deltaPos - astronaut.finalDir * astronaut.speedLen;
+            }
+
+            if (keyPressed[KEY_LEFT]) {
+                astronaut.allAngle.h = astronaut.allAngle.h + astronaut.angleStep;
+                astronautCamera.RotateYaw(astronaut.angleStep);
+            }
+            if (keyPressed[KEY_RIGHT]) {
+                astronaut.allAngle.h = astronaut.allAngle.h - astronaut.angleStep;
+                astronautCamera.RotateYaw(-astronaut.angleStep);
+            }
+            if (keyPressed[KEY_UP]) {
+                astronaut.allAngle.p = astronaut.allAngle.p + astronaut.angleStep;
+                astronautCamera.RotatePitch(astronaut.angleStep);
+            }
+            if (keyPressed[KEY_DOWN]) {
+                astronaut.allAngle.p = astronaut.allAngle.p - astronaut.angleStep;
+                astronautCamera.RotatePitch(-astronaut.angleStep);
+            }
+
+            if (detectCollisions()) {
+                // 回退到初始状态（输入处理前的状态）
+                AstronautState initialState2 = stateBuffer[(currentStateIndex + 1) % Fnum];
+                astronaut.position = initialState2.position;
+                //astronautCamera.origonPos = initialState2.cameraPos;
+                astronautCamera.deltaPos = initialState2.cameraPos;
+                astronaut.allAngle = initialState2.angles;
+                astronautCamera.orientation = initialState2.orientation;
+                astronautCamera.UpdateEulerFromOrientation();
+
+            }
+            // 更新索引（确保不会超出范围）
+            currentStateIndex = (currentStateIndex + 1) % Fnum;
+
+
+            if (keyPressed[KEY_ROLL_LEFT] || keyPressed[KEY_ROLL_RIGHT]) {
+                // 使用时间计算摆动角度，形成动画
+                float time = glutGet(GLUT_ELAPSED_TIME) * 0.001f; // 获取当前时间（秒）
+                float swing = sin(time * 8.0f) * 45.0f; // 调整频率(8)和幅度(30度)
+                astronaut.rightLegAngle = swing;
+                astronaut.leftLegAngle = -swing; // 左右腿交替摆动
+                astronautCamera.Update();
+            }
+            else {
+                astronaut.rightLegAngle = 0.0f;
+                astronaut.leftLegAngle = 0.0f;
+            }
+        }
+        else {
+            if (keyPressed[CAMERA_MOVEUP]) { astronautCamera.MoveUp(); }
+            if (keyPressed[CAMERA_MOVEDOWN]) { astronautCamera.MoveDown(); }
+            if (keyPressed[CAMERA_MOVELEFT]) { astronautCamera.MoveLeft(); }
+            if (keyPressed[CAMERA_MOVERIGHT]) { astronautCamera.MoveRight(); }
+            if (keyPressed[CAMERA_MOVEFRONT]) { astronautCamera.MoveFront(); }
+            if (keyPressed[CAMERA_MOVEBACK]) { astronautCamera.MoveBack(); }
+        }
+    }
+}
+
 
 void keyboardDown(unsigned char key, int x, int y) {
     float time = 1.5f;
@@ -386,7 +559,7 @@ void keyboardDown(unsigned char key, int x, int y) {
             else if (astronautCamera.online)
                 astronautCamera.StartTransitionTo(shipCamera, time);
             break;
-        case 'k': // 'l'键
+        case 'k': // 'k'键
             if (!globalCamera.online || myShip.targetBall == nullptr) { break; }
                 globalCamera.StartTransitionTo(planetCamera, time); 
                break;
@@ -441,177 +614,4 @@ void specialDown(int key, int x, int y) {
 // 特殊按键释放回调
 void specialUp(int key, int x, int y) {
     specialKeyPressed[key] = false;
-}
-// 每帧检测按键状态
-void checkKeyStates() {
-    detectCollisions2();
-
-    deltaLight = CVector(0, 0, 0);
-    if (globalCamera.transition.isActive || astronautCamera.transition.isActive || shipCamera.transition.isActive) {
-        return;
-    }
-    globalCamera.moveSpeed = 0;
-
-    if (globalCamera.online) {
-        if (keyPressed[CAMERA_UP]) globalCamera.RotatePitch(1.0f);
-        if (keyPressed[CAMERA_DOWN]) globalCamera.RotatePitch(-1.0f);
-        if (keyPressed[CAMERA_LEFT]) globalCamera.RotateYaw(1.0f);
-        if (keyPressed[CAMERA_RIGHT]) globalCamera.RotateYaw(-1.0f);
-        if (keyPressed[CAMERA_ROLL_LEFT]) globalCamera.RotateRoll(-1.0f);
-        if (keyPressed[CAMERA_ROLL_RIGHT]) globalCamera.RotateRoll(1.0f);
-
-    }
-    else if(astronautCamera.online){
-        if (keyPressed[CAMERA_UP]) astronautCamera.RotatePitch(2.0f);
-        if (keyPressed[CAMERA_DOWN]) astronautCamera.RotatePitch(-2.0f);
-        if (keyPressed[CAMERA_LEFT]) astronautCamera.RotateYaw(2.0f);
-        if (keyPressed[CAMERA_RIGHT]) astronautCamera.RotateYaw(-2.0f);
-        if (keyPressed[CAMERA_ROLL_LEFT]) astronautCamera.RotateRoll(-2.0f);
-        if (keyPressed[CAMERA_ROLL_RIGHT]) astronautCamera.RotateRoll(2.0f);
-    }
-    else {
-        float delta = 0.5f;
-        if (keyPressed[CAMERA_UP]) shipCamera.RotatePitch(delta);
-        if (keyPressed[CAMERA_DOWN]) shipCamera.RotatePitch(-delta);
-        if (keyPressed[CAMERA_LEFT]) shipCamera.RotateYaw(delta);
-        if (keyPressed[CAMERA_RIGHT]) shipCamera.RotateYaw(-delta);
-        if (keyPressed[CAMERA_ROLL_LEFT]) shipCamera.RotateRoll(-delta);
-        if (keyPressed[CAMERA_ROLL_RIGHT]) shipCamera.RotateRoll(delta);
-    }
-    // 速度控制
-    if (keyPressed[SPEED_UP]) { myShip.speedLen += myShip.speedStep; }
-    if (keyPressed[SPEED_DOWN]) { myShip.speedLen -= myShip.speedStep;}
-    // 速度限制
-    if (myShip.speedLen < 0) {
-        myShip.speedLen = 0;
-    }
-    
-    if (shipCamera.online) {
-        if (ControllingShip_ship) {
-            if (keyPressed[CAMERA_MOVEUP]) { shipCamera.MoveUp(); }
-            if (keyPressed[CAMERA_MOVEDOWN]) { shipCamera.MoveDown(); }
-            if (keyPressed[CAMERA_MOVELEFT]) { shipCamera.MoveLeft(); }
-            if (keyPressed[CAMERA_MOVERIGHT]) { shipCamera.MoveRight(); }
-            if (keyPressed[CAMERA_MOVEFRONT]) { shipCamera.MoveFront(); }
-            if (keyPressed[CAMERA_MOVEBACK]) { shipCamera.MoveBack(); }
-        }
-    }
-
-    if (ControlingGlobal || shipCamera.online) {
-        if (!ControllingShip && !shipCamera.online) {
-            {//控制全局相机
-                if (keyPressed[CAMERA_MOVEUP])    {globalCamera.moveSpeed = 0.04f; globalCamera.MoveUp(); }
-                if (keyPressed[CAMERA_MOVEDOWN])  {globalCamera.moveSpeed = 0.04f; globalCamera.MoveDown(); }
-                if (keyPressed[CAMERA_MOVELEFT])  {globalCamera.moveSpeed = 0.04f; globalCamera.MoveLeft();}
-                if (keyPressed[CAMERA_MOVERIGHT]) {globalCamera.moveSpeed = 0.04f; globalCamera.MoveRight();}
-                if (keyPressed[CAMERA_MOVEFRONT]) {globalCamera.moveSpeed = 0.04f; globalCamera.MoveFront();
-                deltaLight = globalCamera.GetForwardDir() * globalCamera.moveSpeed;
-                }
-                if (keyPressed[CAMERA_MOVEBACK])  {globalCamera.moveSpeed = 0.04f; globalCamera.MoveBack(); 
-                deltaLight = -globalCamera.GetForwardDir() * globalCamera.moveSpeed;
-                }
-            }
-        }
-        else {
-            //控制飞船
-            if ((!myShip.autoPilot||myShip.targetBall == nullptr)&&(!shipCamera.online|| shipCamera.online && ControllingShip_camera)) {
-
-                if (keyPressed[KEY_UP]) {
-                    ShipPitch(myShip.angleStep); 
-                }
-                if (keyPressed[KEY_DOWN]) {
-                    ShipPitch(-myShip.angleStep);
-                }
-                if (keyPressed[KEY_LEFT]) { 
-                    ShipYaw(+myShip.angleStep);
-                }
-                if (keyPressed[KEY_RIGHT]) {
-                    ShipYaw(-myShip.angleStep);
-                }
-                if (keyPressed[KEY_ROLL_LEFT]) { 
-                    ShipRoll(+myShip.angleStep);
-                }
-                if (keyPressed[KEY_ROLL_RIGHT]) {
-                    ShipRoll(-myShip.angleStep);
-                }
-            }
-        }       
-    }
-    if(shipCamera.online && ControllingShip_astro||!(ControlingGlobal || shipCamera.online)) {
-        if (ControllingAstronaut||ControllingShip_astro) {
-            AstronautState initialState = {
-                astronaut.position,
-                astronautCamera.origonPos,
-                astronautCamera.deltaPos,
-                astronaut.allAngle,
-                astronautCamera.orientation
-            };
-
-            // 保存到缓冲区
-            stateBuffer[currentStateIndex] = initialState;
-
-            //宇航员
-            if (keyPressed[KEY_ROLL_LEFT]) { 
-                astronaut.position = astronaut.position + astronaut.direction * astronaut.speedLen;
-                //astronautCamera.deltaPos = astronautCamera.deltaPos + astronaut.finalDir * astronaut.speedLen;
-            }
-            if (keyPressed[KEY_ROLL_RIGHT]) { 
-                astronaut.position = astronaut.position - astronaut.direction * astronaut.speedLen; 
-                //astronautCamera.deltaPos = astronautCamera.deltaPos - astronaut.finalDir * astronaut.speedLen;
-            }
-
-            if (keyPressed[KEY_LEFT]) {
-                astronaut.allAngle.h = astronaut.allAngle.h + astronaut.angleStep;
-                astronautCamera.RotateYaw(astronaut.angleStep);
-            }
-            if (keyPressed[KEY_RIGHT]) {
-                astronaut.allAngle.h = astronaut.allAngle.h - astronaut.angleStep;
-                astronautCamera.RotateYaw(-astronaut.angleStep);
-            }
-            if (keyPressed[KEY_UP]) {
-                astronaut.allAngle.p = astronaut.allAngle.p + astronaut.angleStep;
-                astronautCamera.RotatePitch(astronaut.angleStep);
-            }
-            if (keyPressed[KEY_DOWN]) {
-                astronaut.allAngle.p = astronaut.allAngle.p - astronaut.angleStep;
-                astronautCamera.RotatePitch(-astronaut.angleStep);
-            }
-
-            if (detectCollisions()) {
-                // 回退到初始状态（输入处理前的状态）
-                AstronautState initialState2 = stateBuffer[(currentStateIndex + 1) % Fnum];
-                astronaut.position = initialState2.position;
-                //astronautCamera.origonPos = initialState2.cameraPos;
-                astronautCamera.deltaPos = initialState2.cameraPos;
-                astronaut.allAngle = initialState2.angles;
-                astronautCamera.orientation = initialState2.orientation;
-                astronautCamera.UpdateEulerFromOrientation();
-
-            }
-            // 更新索引（确保不会超出范围）
-            currentStateIndex = (currentStateIndex + 1) % Fnum;
-
-
-            if (keyPressed[KEY_ROLL_LEFT] || keyPressed[KEY_ROLL_RIGHT]) {
-                // 使用时间计算摆动角度，形成动画
-                float time = glutGet(GLUT_ELAPSED_TIME) * 0.001f; // 获取当前时间（秒）
-                float swing = sin(time * 8.0f) * 45.0f; // 调整频率(8)和幅度(30度)
-                astronaut.rightLegAngle = swing;
-                astronaut.leftLegAngle = -swing; // 左右腿交替摆动
-                astronautCamera.Update();
-            }
-            else {
-                astronaut.rightLegAngle = 0.0f;
-                astronaut.leftLegAngle = 0.0f;
-            }
-        }
-        else {
-            if (keyPressed[CAMERA_MOVEUP]) { astronautCamera.MoveUp(); }
-            if (keyPressed[CAMERA_MOVEDOWN]) {  astronautCamera.MoveDown(); }
-            if (keyPressed[CAMERA_MOVELEFT]) {  astronautCamera.MoveLeft(); }
-            if (keyPressed[CAMERA_MOVERIGHT]) { astronautCamera.MoveRight(); }
-            if (keyPressed[CAMERA_MOVEFRONT]) {  astronautCamera.MoveFront(); }
-            if (keyPressed[CAMERA_MOVEBACK]) {  astronautCamera.MoveBack(); }
-        }
-    }   
 }

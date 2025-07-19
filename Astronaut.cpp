@@ -28,12 +28,18 @@ void initAstronaut() {
     astronaut.bodyTexture = LoadTexture("textures/astronaut_body.jpg");
     astronaut.armTexture = LoadTexture("textures/astronaut_arm.jpg");
     astronaut.legTexture = LoadTexture("textures/astronaut_leg.jpg");
+    astronaut.hairTexture = LoadTexture("textures/astronaut_hair.jpg");
+    astronaut.faceTexture = LoadTexture("textures/astronaut_face.jpg");
+    astronaut.eyeTexture = LoadTexture("textures/eye2.png");
+    astronaut.noseTexture = LoadTexture("textures/nose.png");
+    astronaut.mouthTexture = LoadTexture("textures/mouth.png");
+
+    astronaut.packageTexture = LoadTexture("textures/suit_package.png");
+    astronaut.beforeTexture = LoadTexture("textures/before(1).png");
 }
 
 void calculatehead() {
     float aa = 0.03;
-
-
     // 1. 获取飞船的变换矩阵（基于四元数）
     transMat1.SetTrans(myShip.position);
     CMatrix shipRotMat = myShip.orientation.ToMatrix(); // 从四元数生成旋转矩阵
@@ -54,10 +60,37 @@ void calculatehead() {
     astronaut.head = headPosition;
 }
 
+void drawTexturedQuad(CVector pos, float width, float height, float rotAngle, CVector axis) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glPushMatrix();
+    glTranslatef(pos.x, pos.y, pos.z);
+    glRotatef(rotAngle, axis.x, axis.y, axis.z);
+
+    CVector normal(0, 0, 1); // 初始法线（垂直于四边形平面）
+    CMatrix rotMat;
+    rotMat.SetRotate(rotAngle, axis);
+    normal = rotMat.vecMul(normal).Normalized(); // 应用相同旋转变换
+
+    glNormal3f(normal.x, normal.y, normal.z);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-width / 2, -height / 2, 0);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(width / 2, -height / 2, 0);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(width / 2, height / 2, 0);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-width / 2, height / 2, 0);
+    glEnd();
+
+    glPopMatrix();
+    glDisable(GL_BLEND);
+}
+
+
 void drawAstronaut() {
+
     // 清空之前的包围盒
     astronaut.collisionBoxes.clear();
-
 
     float aa = 0.03;
 
@@ -126,38 +159,123 @@ void drawAstronaut() {
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     // ================== 头部（球体）==================
-    glBindTexture(GL_TEXTURE_2D, astronaut.headTexture);
     glPushMatrix();
-    transMat1.SetTrans(CVector(0, 2.2, 0));
+    transMat1.SetTrans(CVector(0, 2.2, 0));  // 头部位置
     glMultMatrixf(transMat1);
+
+    // 头部基础头盔
+    glBindTexture(GL_TEXTURE_2D, astronaut.faceTexture);
     glColor3f(1, 1, 1);
+    glutSolidSphere(0.3, 16, 16);
 
-    // 计算头部包围盒
-    AABB headBox;
-    headBox.partName = "Head";
-    headBox.min = CVector(-0.3, -0.3, -0.3); // 球体半径0.3
-    headBox.max = CVector(0.3, 0.3, 0.3);
-    headBox.worldTransform = finalMat * transMat1;
-    astronaut.collisionBoxes.push_back(headBox);
+    // 面部基底（稍突出的曲面）
+    glPushMatrix();
+    glTranslatef(0, 0, 0.05);
 
-    // 启用球面映射纹理坐标
-    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-    glEnable(GL_TEXTURE_GEN_S);
-    glEnable(GL_TEXTURE_GEN_T);
-
-    glutSolidSphere(0.3, 32, 32);
-
-    glDisable(GL_TEXTURE_GEN_S);
-    glDisable(GL_TEXTURE_GEN_T);
+    // 1. 眼
+    glPushMatrix();
+    transMat1.SetTrans(CVector(0, 0.06, 0.24));
+    rotateMat1.SetRotate(180, CVector(0, 1, 0));
+    CMatrix finalMat2 = transMat1 * rotateMat1;
+    rotateMat1.SetRotate(15, CVector(1, 0, 00));
+    finalMat2 = finalMat2 * rotateMat1;
+    glMultMatrixf(finalMat2);
+    glBindTexture(GL_TEXTURE_2D, astronaut.eyeTexture);
+    // 使用深度偏移确保眼睛在最前面
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0, -1.0);
+    drawTexturedQuad(CVector(0, 0, 0), 0.3, 0.15, 0, CVector(1, 0, 0));
+    glDisable(GL_POLYGON_OFFSET_FILL);
     glPopMatrix();
+
+    // 2. 鼻子（平面贴图）
+    glPushMatrix();
+    transMat1.SetTrans(CVector(0, -0.025, 0.26));
+    rotateMat1.SetRotate(180, CVector(0, 1, 0));
+    scaleMat1.SetScale(CVector(1.0, 1.0, 1.0));
+    finalMat2 = transMat1 * rotateMat1 * scaleMat1;
+    glMultMatrixf(finalMat2);
+    // 使用纹理绘制平面鼻子
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0, -1.0);
+    glBindTexture(GL_TEXTURE_2D, astronaut.noseTexture);
+    drawTexturedQuad(CVector(0, 0, 0), 0.08, 0.08, 0, CVector(1, 0, 0));
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glPopMatrix();
+
+    // 3. 嘴部
+    glPushMatrix();
+    transMat1.SetTrans(CVector(0, -0.14, 0.23));
+    rotateMat1.SetRotate(15, CVector(1, 0, 0));
+    finalMat2 = transMat1 * rotateMat1;
+    glMultMatrixf(finalMat2);
+
+    glBindTexture(GL_TEXTURE_2D, astronaut.mouthTexture);
+    drawTexturedQuad(CVector(0, 0, 0), 0.14, 0.14, 0, CVector(1, 0, 0));
+    glPopMatrix();
+
+    glPopMatrix();  // 面部基底结束
+
+    // 头发（顶部，改为半圆形）
+    glPushMatrix();
+    transMat1.SetTrans(CVector(0, 0.13, 0));
+    glMultMatrixf(transMat1);
+    glBindTexture(GL_TEXTURE_2D, astronaut.hairTexture);
+
+    // 启用混合以使头发边缘自然融入头部
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // 创建半球形头发
+    GLUquadricObj* hairQuad = gluNewQuadric();
+    gluQuadricTexture(hairQuad, GL_TRUE);
+    gluQuadricNormals(hairQuad, GLU_SMOOTH);  // 确保法线正确
+
+    // 关键设置：裁剪平面以创建半球效果
+    glEnable(GL_CLIP_PLANE0);
+    GLdouble clipPlane[] = { 0.0, 1.0, 0.0, 0.0 };  // y<0的部分被裁剪
+    glClipPlane(GL_CLIP_PLANE0, clipPlane);
+
+    // 绘制半球体（只绘制上半部）
+    gluSphere(hairQuad, 0.3, 32, 16);  // 使用足够的分段数使半球平滑
+
+    glDisable(GL_CLIP_PLANE0);  // 恢复裁剪平面设置
+    gluDeleteQuadric(hairQuad);
+
+    glDisable(GL_BLEND);  // 禁用混合
+    glPopMatrix();  // 头发结束
+
+    glPopMatrix();  // 头部结束
 
     // ================== 躯干（立方体）==================
     glBindTexture(GL_TEXTURE_2D, astronaut.bodyTexture);
     glPushMatrix();
     transMat1.SetTrans(CVector(0, 1.4, 0));
-    scaleMat1.SetScale(CVector(0.444, 1, 0.333));
-    glMultMatrixf(transMat1 * scaleMat1);
+    glMultMatrixf(transMat1);
+    glColor3f(1, 1, 1);
+
+    // 保存当前模型视图矩阵
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();  // 重置为单位矩阵
+
+    // 正确的纹理坐标生成参数
+    GLfloat sPlane[] = { 1.0f, 0.0f, 0.0f, 0.5f };  // s = x + 0.5 (范围 [0,1])
+    GLfloat tPlane[] = { 0.0f, 1.0f, 0.0f, 0.5f };   // t = y + 0.5 (范围 [0,1])
+
+    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+    glTexGenfv(GL_S, GL_OBJECT_PLANE, sPlane);
+    glTexGenfv(GL_T, GL_OBJECT_PLANE, tPlane);
+    glEnable(GL_TEXTURE_GEN_S);
+    glEnable(GL_TEXTURE_GEN_T);
+
+    // 恢复模型视图矩阵
+    glPopMatrix();
+
+    // 应用缩放 - 避免拉伸纹理
+    scaleMat1.SetScale(CVector(0.444, 1, 0.444));  // 保持X/Z方向一致
+    glMultMatrixf(scaleMat1);
 
     // 计算身体包围盒
     AABB bodyBox;
@@ -167,20 +285,36 @@ void drawAstronaut() {
     bodyBox.worldTransform = finalMat * transMat1 * scaleMat1;
     astronaut.collisionBoxes.push_back(bodyBox);
 
-   
-
-    // 调整后的纹理生成平面参数
-    GLfloat sPlane[] = { 1.0f, 0.0f, 0.0f, 0.0f };  // X轴方向，系数从2.25降为1.0
-    GLfloat tPlane[] = { 0.0f, 1.0f, 0.0f, 0.0f };   // Y轴方向
-
-    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    glTexGenfv(GL_S, GL_OBJECT_PLANE, sPlane);
-    glTexGenfv(GL_T, GL_OBJECT_PLANE, tPlane);
-    glEnable(GL_TEXTURE_GEN_S);
-    glEnable(GL_TEXTURE_GEN_T);
-
+    // 绘制立方体
     glutSolidCube(1.0);
+    //宇航服背包
+    glPushMatrix();
+    transMat1.SetTrans(CVector(0,0,-0.501));
+    finalMat2 = transMat1;
+    glMultMatrixf(finalMat2);
+
+    glBindTexture(GL_TEXTURE_2D, astronaut.packageTexture);
+
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0, -1.0);
+    float temp = 1.3;
+    drawTexturedQuad(CVector(0, 0, 0), 0.761*temp, 0.761 *temp, 0, CVector(1, 0, 0));
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glPopMatrix();
+
+    //宇航服前面
+    glPushMatrix();
+    transMat1.SetTrans(CVector(0, 0, 0.501));
+    finalMat2 = transMat1;
+    glMultMatrixf(finalMat2);
+    glBindTexture(GL_TEXTURE_2D, astronaut.beforeTexture);
+
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0, -1.0);
+    temp = 1.3;
+    drawTexturedQuad(CVector(0, 0, 0), 0.761 * temp, 0.761 * temp, 0, CVector(1, 0, 0));
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glPopMatrix();
 
     glDisable(GL_TEXTURE_GEN_S);
     glDisable(GL_TEXTURE_GEN_T);
@@ -238,7 +372,6 @@ void drawAstronaut() {
     leftArmBox.worldTransform = finalMat * transMat1 * rotateMat1;
     astronaut.collisionBoxes.push_back(leftArmBox);
 
-   
 
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
@@ -275,8 +408,7 @@ void drawAstronaut() {
     rightLegBox.worldTransform = finalMat * transMat1 * rotateMat1 * rotateMat2;
     astronaut.collisionBoxes.push_back(rightLegBox);
 
-    
-
+   
     quadric = gluNewQuadric();
     gluQuadricTexture(quadric, GL_TRUE);
     gluQuadricNormals(quadric, GLU_SMOOTH);

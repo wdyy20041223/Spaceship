@@ -17,7 +17,9 @@ extern bool ControlingGlobal,needGuide;
 extern cinfo cInfo[2];
 extern cinfo cInfo2[5];
 extern bool  ControllingShip, ControllingAstronaut, ControllingShip_camera, ControllingShip_ship, ControllingShip_astro;
-
+extern float collisionTime;
+extern ball collosionPlanet;
+extern bool lastcollision;
 
 
 void Camera::StartTransitionTo(Camera& target, float duration) {
@@ -54,6 +56,7 @@ bool Camera::UpdateTransition(float deltaTime) {
             globalCamera.origonPos = planetCamera.origonPos;
             globalCamera.deltaPos = CVector(0, 0, 0);
             globalCamera.orientation = planetCamera.realOrientation;
+            globalCamera.UpdateEulerFromOrientation();
         }
 
         if (tempCamera.transition.targetCamera == &globalCamera|| tempCamera.transition.targetCamera == &planetCamera) {
@@ -66,8 +69,8 @@ bool Camera::UpdateTransition(float deltaTime) {
         transition.isActive = false;
 
         if (!shipCamera.online) {
-            ControllingShip_ship = true;
-            ControllingShip_camera = false;
+            ControllingShip_ship = false;
+            ControllingShip_camera = true;
             ControllingShip_astro = false;
         }
         return true;
@@ -290,6 +293,7 @@ void Camera::Update() {
 
 
 void Camera::RenderInfo(const char* viewType) const {
+    static bool temp=false;
     GLboolean depthTestEnabled;
     GLint oldMatrixMode;
     glGetBooleanv(GL_DEPTH_TEST, &depthTestEnabled);
@@ -317,29 +321,37 @@ void Camera::RenderInfo(const char* viewType) const {
     RenderString(startX, yPos, buffer);
     yPos -= 30;
 
-    // 显示两次碰撞信息
-    for (int i = 0; i < 5; i++) {
-        // 检查是否有有效的碰撞信息
-        if (cInfo2[i].shipPart != "" || cInfo2[i].astroPart != "") {
-            // 飞船部件信息
-            snprintf(buffer, sizeof(buffer), "[%d] Ship: %s", i + 1, cInfo2[i].shipPart.c_str());
-            RenderString(startX, yPos, buffer);
-            yPos -= 20;
+    if (collosionPlanet.index == 10 && !lastcollision) {
+        snprintf(buffer, sizeof(buffer), "No Collision In 100 Seconds");
+        RenderString(startX, yPos, buffer);
+        yPos -= 70;
+    }
+    else {        
+        // 宇航员部件信息
+        snprintf(buffer, sizeof(buffer), "Plant: %s", cInfo2[0].astroPart.c_str());
+        RenderString(startX, yPos, buffer);
+        yPos -= 20;
 
-            // 宇航员部件信息
-            snprintf(buffer, sizeof(buffer), "   Plant: %s", cInfo2[i].astroPart.c_str());
+        // 碰撞点坐标
+        snprintf(buffer, sizeof(buffer), "Point: (%.2f, %.2f, %.2f)",
+            collosionPlanet.centerPlace.x,
+            collosionPlanet.centerPlace.y,
+            collosionPlanet.centerPlace.z);
+        RenderString(startX, yPos, buffer);
+        yPos -= 20;  // 为下一次碰撞信息留出空间
+        true;
+        if (collisionTime - 0.0333 < 0.1) {
+            snprintf(buffer, sizeof(buffer), "Time: In 0.00 Seconds");
             RenderString(startX, yPos, buffer);
-            yPos -= 20;
-
-            // 碰撞点坐标
-            snprintf(buffer, sizeof(buffer), "   Point: (%.2f, %.2f, %.2f)",
-                cInfo2[i].collisionPoint.x,
-                cInfo2[i].collisionPoint.y,
-                cInfo2[i].collisionPoint.z);
+            yPos -= 30;
+        }
+        else {
+            snprintf(buffer, sizeof(buffer), "Time: In %.2f Seconds", collisionTime);
             RenderString(startX, yPos, buffer);
-            yPos -= 30;  // 为下一次碰撞信息留出空间
+            yPos -= 30;
         }
     }
+    
 
     glColor3f(0.0f, 0.9f, 0.9f);
     snprintf(buffer, sizeof(buffer), "--------Camera Info--------");
@@ -541,8 +553,28 @@ void Camera::OptionInfo(const char* viewType) const {
     yPos -= 20;
     snprintf(buffer, sizeof(buffer), "'j' to speed down ship");
     RenderString(rightColumnX, yPos, buffer);
+    yPos -= 20;
+    snprintf(buffer, sizeof(buffer), "'c' to switch Euler/Local");
+    RenderString(rightColumnX, yPos, buffer);
+    yPos -= 20;
+    snprintf(buffer, sizeof(buffer), "'t' to turn up Camera");
+    RenderString(rightColumnX, yPos, buffer);
+    yPos -= 20;
+    snprintf(buffer, sizeof(buffer), "'g' to turn down Camera");
+    RenderString(rightColumnX, yPos, buffer);
+    yPos -= 20;
+    snprintf(buffer, sizeof(buffer), "'f' to turn left Camera");
+    RenderString(rightColumnX, yPos, buffer);
+    yPos -= 20;
+    snprintf(buffer, sizeof(buffer), "'h' to turn right Camera");
+    RenderString(rightColumnX, yPos, buffer);
+    yPos -= 20;
+    snprintf(buffer, sizeof(buffer), "'r' to roll left Camera");
+    RenderString(rightColumnX, yPos, buffer);
+    yPos -= 20;
+    snprintf(buffer, sizeof(buffer), "'y' to roll right Camera");
+    RenderString(rightColumnX, yPos, buffer);
     yPos -= 40;
-
     if (strcmp(viewType, "Global") == 0) {       
         snprintf(buffer, sizeof(buffer), "------------Switch Camera-------------");
         RenderString(rightColumnX, yPos, buffer);
@@ -603,28 +635,7 @@ void Camera::OptionInfo(const char* viewType) const {
             yPos -= 20;
             snprintf(buffer, sizeof(buffer), "  move globalCamera");
             RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'c' to switch Euler/Local");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'t' to turn up Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'g' to turn down Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'f' to turn left Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'h' to turn right Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'r' to roll left Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'y' to roll right Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;           
+            yPos -= 20;        
         }                                     
     }
     else if (strcmp(viewType, "Astronaut") == 0) {
@@ -652,6 +663,7 @@ void Camera::OptionInfo(const char* viewType) const {
         snprintf(buffer, sizeof(buffer), "'F3' to switch controlled object");
         RenderString(rightColumnX, yPos, buffer);
         yPos -= 20;
+
         if (ControllingAstronaut) {
             snprintf(buffer, sizeof(buffer), "Now you'ra controlling astronaut");
             RenderString(rightColumnX, yPos, buffer);
@@ -683,27 +695,6 @@ void Camera::OptionInfo(const char* viewType) const {
             RenderString(rightColumnX, yPos, buffer);
             yPos -= 20;
             snprintf(buffer, sizeof(buffer), "  move astronautCamera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'c' to switch Euler/Local");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'t' to turn up Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'g' to turn down Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'f' to turn left Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'h' to turn right Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'r' to roll left Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'y' to roll right Camera");
             RenderString(rightColumnX, yPos, buffer);
             yPos -= 20;
         }            
@@ -766,27 +757,7 @@ void Camera::OptionInfo(const char* viewType) const {
             snprintf(buffer, sizeof(buffer), "  move shipCamera");
             RenderString(rightColumnX, yPos, buffer);
             yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'c' to switch Euler/Local");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'t' to turn up Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'g' to turn down Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'f' to turn left Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'h' to turn right Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'r' to roll left Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
-            snprintf(buffer, sizeof(buffer), "'y' to roll right Camera");
-            RenderString(rightColumnX, yPos, buffer);
-            yPos -= 20;
+         
         }
         else {
             snprintf(buffer, sizeof(buffer), "Now you'ra controlling astronaut");
